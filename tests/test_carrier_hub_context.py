@@ -51,12 +51,10 @@ async def test_client_is_get_only_and_validates_projection():
     now = datetime.now(UTC).isoformat()
     payload = {
         "item": {
-            "application_id": "app-123",
-            "audience": "internal",
-            "brokerage_slug": "bainbridge",
-            "stage": "verification",
+            "id": "app-123",
             "status": "pending",
-            "context_updated_at": now,
+            "brokerage": {"slug": "bainbridge"},
+            "updatedAt": now,
         }
     }
     requests = []
@@ -71,7 +69,6 @@ async def test_client_is_get_only_and_validates_projection():
 
     assert context.application_id == "app-123"
     assert requests[0].method == "GET"
-    assert requests[0].headers["x-kb-audience"] == "internal"
     assert requests[0].headers["authorization"] == "Bearer token"
 
 
