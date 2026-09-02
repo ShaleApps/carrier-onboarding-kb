@@ -1,0 +1,23 @@
+# Every source is reviewed before it is eligible for retrieval. IDs are examples only.
+sources:
+  - id: carrier-guide
+    kind: google_drive
+    visibility: carrier_public
+    owner: carrier-success@lohi.ai
+    file_ids: ["DRIVE_FILE_ID"]
+    refresh: "0 */6 * * *"
+
+  - id: carrier-ops-decisions
+    kind: slack
+    visibility: carrier_internal
+    owner: carrier-ops@lohi.ai
+    channel_ids: ["C0123456789"]
+    refresh: "0 */4 * * *"
+
+  - id: onboarding-status-explanations
+    kind: lohi_view
+    visibility: carrier_internal
+    owner: carrier-onboarding@lohi.ai
+    # Must be a migration-owned, read-only view selected by this exact name.
+    view: carrier_kb_onboarding_status_dossier
+    refresh: "15 */2 * * *"
