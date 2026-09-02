@@ -83,10 +83,10 @@ class DriverInvitationSummary(BaseModel):
 
 
 class ApplicationContext(BaseModel):
-    """Carrier Hub's KB-specific, audience-filtered read projection.
+    """Sanitized context normalized from Carrier Hub's status response.
 
-    Carrier Hub owns construction of this object. The KB must not reconstruct
-    eligibility or next actions from raw application fields.
+    The adapter owns this boundary: raw application/vendor fields must not
+    cross into the answer pipeline.
     """
 
     model_config = ConfigDict(extra="forbid")

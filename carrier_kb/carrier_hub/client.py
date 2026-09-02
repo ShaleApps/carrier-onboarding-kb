@@ -6,7 +6,13 @@ from urllib.parse import quote
 
 import httpx
 
-from carrier_kb.carrier_hub.models import ApplicationContext, ContextAudience
+from carrier_kb.carrier_hub.models import (
+    ApplicationContext,
+    ContextAudience,
+    Requirement,
+    RequirementState,
+    VerificationSummary,
+)
 
 
 class CarrierHubContextClient(Protocol):
@@ -56,8 +62,8 @@ class HttpCarrierHubContextClient:
             raise ValueError("Carrier Hub returned an unexpected application")
         return context
 
-    @staticmethod
-    def _sanitize_status(item: Any, application_id: str, audience: ContextAudience) -> ApplicationContext:
+    @classmethod
+    def _sanitize_status(cls, item: Any, application_id: str, audience: ContextAudience) -> ApplicationContext:
         if not isinstance(item, dict):
             raise TypeError("Carrier Hub returned an invalid application status")
         application_id_from_api = item.get("id")
@@ -68,14 +74,15 @@ class HttpCarrierHubContextClient:
             raise ValueError("Carrier Hub returned incomplete application status")
         status = str(item.get("status") or "unknown")
         if status == "onboarding_completed":
-            stage, explanation, action = "completed", "Onboarding is complete.", None
+            stage, explanation = "completed", "Onboarding is complete."
         elif status == "rejected":
-            stage, explanation, action = "rejected", "The application requires internal review.", None
+            stage, explanation = "rejected", "The application requires internal review."
         elif status == "error":
-            stage, explanation, action = "error", "The application has an internal processing error.", None
+            stage, explanation = "error", "The application has an internal processing error."
         else:
-            stage, explanation, action = "verification", "Onboarding requirements are still in progress.", None
+            stage, explanation = "verification", "Onboarding requirements are still in progress."
         context_updated_at = datetime.fromisoformat(str(updated_at))
+        requirements = cls._requirements(item)
         return ApplicationContext(
             application_id=str(application_id_from_api),
             audience=audience,
@@ -83,6 +90,80 @@ class HttpCarrierHubContextClient:
             stage=stage,
             status=status,
             status_explanation=explanation,
-            next_action=action,
+            requirements=tuple(requirements),
+            rmis=cls._verification(item.get("rmisVerification")),
+            evident=cls._verification(item.get("evidentVerification")),
+            training=cls._training(item),
             context_updated_at=context_updated_at.astimezone(UTC),
         )
+
+    @staticmethod
+    def _parse_time(value: Any) -> datetime | None:
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(str(value)).astimezone(UTC)
+        except (TypeError, ValueError):
+            return None
+
+    @classmethod
+    def _verification(cls, value: Any) -> VerificationSummary | None:
+        if not isinstance(value, dict):
+            return None
+        raw = str(value.get("status") or "unknown").lower()
+        states = {
+            "invited": RequirementState.INVITED,
+            "submitted": RequirementState.SUBMITTED,
+            "processing": RequirementState.PROCESSING,
+            "completed": RequirementState.SATISFIED,
+            "passed": RequirementState.SATISFIED,
+            "manually_approved": RequirementState.SATISFIED,
+            "failed": RequirementState.FAILED,
+            "timeout": RequirementState.FAILED,
+        }
+        state = states.get(raw, RequirementState.UNKNOWN)
+        return VerificationSummary(
+            state=state,
+            updated_at=cls._parse_time(value.get("updatedAt") or value.get("updated_at")),
+            action_required=state in {RequirementState.INVITED, RequirementState.FAILED},
+        )
+
+    @classmethod
+    def _training(cls, item: dict[str, Any]) -> VerificationSummary | None:
+        flags = ("safelandRequired", "w9Required", "h2sRequired")
+        if not any(item.get(flag) for flag in flags):
+            return None
+        complete = all(
+            not item.get(required) or bool(item.get(completed))
+            for required, completed in (
+                ("safelandRequired", "safelandCompletedAt"),
+                ("w9Required", "w9ReceivedAt"),
+                ("h2sRequired", "h2sCompletedAt"),
+            )
+        )
+        return VerificationSummary(
+            state=RequirementState.SATISFIED if complete else RequirementState.REQUIRED,
+            action_required=not complete,
+        )
+
+    @classmethod
+    def _requirements(cls, item: dict[str, Any]) -> list[Requirement]:
+        requirements: list[Requirement] = []
+        for key, label, required_key, complete_key in (
+            ("safeland", "Safeland / PEC training", "safelandRequired", "safelandCompletedAt"),
+            ("w9", "W-9", "w9Required", "w9ReceivedAt"),
+            ("h2s", "H2S training", "h2sRequired", "h2sCompletedAt"),
+        ):
+            if not item.get(required_key):
+                continue
+            completed = cls._parse_time(item.get(complete_key))
+            requirements.append(
+                Requirement(
+                    key=key,
+                    label=label,
+                    state=RequirementState.SATISFIED if completed else RequirementState.REQUIRED,
+                    blocking=completed is None,
+                    updated_at=completed,
+                )
+            )
+        return requirements

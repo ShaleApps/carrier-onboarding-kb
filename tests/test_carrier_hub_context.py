@@ -55,6 +55,9 @@ async def test_client_is_get_only_and_validates_projection():
             "status": "pending",
             "brokerage": {"slug": "bainbridge"},
             "updatedAt": now,
+            "safelandRequired": True,
+            "safelandCompletedAt": None,
+            "rmisVerification": {"status": "invited", "updatedAt": now},
         }
     }
     requests = []
@@ -68,6 +71,8 @@ async def test_client_is_get_only_and_validates_projection():
     context = await client.get_application_context("app-123", "token", ContextAudience.INTERNAL)
 
     assert context.application_id == "app-123"
+    assert context.requirements[0].state is RequirementState.REQUIRED
+    assert context.rmis is not None and context.rmis.action_required
     assert requests[0].method == "GET"
     assert requests[0].headers["authorization"] == "Bearer token"
 
