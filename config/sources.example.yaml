@@ -1,5 +1,12 @@
 # Every source is reviewed before it is eligible for retrieval. IDs are examples only.
 sources:
+  - id: canonical-evidence-pack
+    kind: static_file
+    visibility: carrier_internal
+    owner: carrier-onboarding@lohi.ai
+    path: /absolute/path/to/carrier-onboarding-kb/docs/canonical-evidence-pack.md
+    refresh: manual
+
   # Interim local seed; replace with an approved, checked-in manifest entry.
   # - id: reviewed-onboarding-notes
   #   kind: static_file
