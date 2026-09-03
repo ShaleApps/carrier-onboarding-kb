@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from carrier_kb.auth.carrier_hub import CarrierHubAuthorizer
 from carrier_kb.carrier_hub.client import HttpCarrierHubContextClient
 from carrier_kb.domain import Principal
-from carrier_kb.retrieval.repository import KnowledgeRepository
+from carrier_kb.retrieval.repository import KnowledgeRepository, PostgresKnowledgeRepository
 from carrier_kb.retrieval.service import AnswerService
 from carrier_kb.settings import Settings
 
@@ -26,8 +26,9 @@ class UnconfiguredRepository(KnowledgeRepository):
 def create_app() -> FastAPI:
     settings = Settings()
     authorizer = CarrierHubAuthorizer(settings)
+    repository = PostgresKnowledgeRepository(settings.kb_dsn) if settings.kb_dsn else UnconfiguredRepository()
     answers = AnswerService(
-        UnconfiguredRepository(),
+        repository,
         carrier_hub=HttpCarrierHubContextClient(settings.carrier_hub_api_base_url),
     )
     app = FastAPI(title="Carrier Onboarding KB", version="0.1.0")

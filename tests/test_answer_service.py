@@ -4,7 +4,12 @@ import pytest
 
 from carrier_kb.carrier_hub.models import ApplicationContext
 from carrier_kb.domain import Audience, Principal
-from carrier_kb.retrieval.repository import Citation, Evidence, KnowledgeRepository
+from carrier_kb.retrieval.repository import (
+    Citation,
+    Evidence,
+    KnowledgeRepository,
+    PostgresKnowledgeRepository,
+)
 from carrier_kb.retrieval.service import AnswerService
 
 
@@ -43,3 +48,9 @@ async def test_without_application_id_only_policy_evidence_is_used():
     service = AnswerService(Repository(), CarrierHub())
     result = await service.answer("What is the policy?", Principal("user-1", Audience.INTERNAL))
     assert [item.document_id for item in result.evidence] == ["policy-1"]
+
+
+@pytest.mark.asyncio
+async def test_postgres_repository_never_queries_without_allowed_corpora():
+    repository = PostgresKnowledgeRepository("postgresql://unused")
+    assert await repository.search("anything", ()) == []
