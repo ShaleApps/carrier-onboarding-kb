@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+import psycopg
 from fastapi import Depends, FastAPI, Request
 from pydantic import BaseModel, Field
 
@@ -53,7 +54,16 @@ def create_app() -> FastAPI:
     @app.get("/readyz")
     async def readyz():
         configured = bool(settings.kb_dsn and settings.carrier_hub_api_base_url)
-        return {"status": "ready" if configured else "not_ready", "dependencies_configured": configured}
+        database_ready = False
+        if configured:
+            try:
+                async with (await psycopg.AsyncConnection.connect(settings.kb_dsn, connect_timeout=2)) as connection, connection.cursor() as cursor:
+                    await cursor.execute("SELECT 1")
+                    database_ready = (await cursor.fetchone()) == (1,)
+            except (psycopg.Error, OSError):
+                database_ready = False
+        ready = configured and database_ready
+        return {"status": "ready" if ready else "not_ready", "database": "ok" if database_ready else "unavailable"}
 
     @app.post("/v1/answer")
     async def answer(payload: AskRequest, caller: Principal = Depends(principal)):  # noqa: B008
