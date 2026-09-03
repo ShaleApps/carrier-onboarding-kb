@@ -4,7 +4,7 @@ import argparse
 import asyncio
 from pathlib import Path
 
-from carrier_kb.ingest.adapters import StaticFileAdapter
+from carrier_kb.ingest.adapters import FrontCsvAdapter, StaticFileAdapter
 from carrier_kb.ingest.registry import load_registry
 from carrier_kb.ingest.writer import PostgresIngestWriter
 from carrier_kb.settings import Settings
@@ -22,9 +22,10 @@ async def ingest(registry_path: Path, source_id: str | None = None) -> int:
     writer = PostgresIngestWriter(settings.kb_dsn)
     total = 0
     for source in sources:
-        if source.kind != "static_file":
+        if source.kind not in {"static_file", "front_csv"}:
             raise RuntimeError(f"adapter not enabled for source kind: {source.kind}")
-        records = await StaticFileAdapter().capture(source)
+        adapter = FrontCsvAdapter() if source.kind == "front_csv" else StaticFileAdapter()
+        records = await adapter.capture(source)
         total += await writer.write(source, records)
         print(f"ingested {len(records)} record(s): {source.id}")
     return total

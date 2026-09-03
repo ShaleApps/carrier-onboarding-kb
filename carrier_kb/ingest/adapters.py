@@ -1,6 +1,7 @@
 """Read-only source adapters. They emit source records; only the ingestion service writes KB rows."""
 from __future__ import annotations
 
+import asyncio
 import csv
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -65,22 +66,6 @@ class StaticFileAdapter(SourceAdapter):
         ) for index, chunk in enumerate(chunks)]
 
     @staticmethod
-    def _chunks(body: str, chunk_chars: int) -> list[str]:
-        lines = body.splitlines()
-        chunks: list[str] = []
-        current: list[str] = []
-        size = 0
-        for line in lines:
-            if current and size + len(line) + 1 > chunk_chars:
-                chunks.append("\n".join(current))
-                current, size = [], 0
-            current.append(line)
-            size += len(line) + 1
-        if current:
-            chunks.append("\n".join(current))
-        return chunks or [""]
-
-    @staticmethod
     def _read_body(path: Path) -> str:
         suffix = path.suffix.lower()
         if suffix in {".txt", ".md"}:
@@ -98,3 +83,56 @@ class StaticFileAdapter(SourceAdapter):
                 for row in sheet.iter_rows(values_only=True)
             )
         raise ValueError(f"unsupported static file type: {suffix}")
+
+    @staticmethod
+    def _chunks(body: str, chunk_chars: int) -> list[str]:
+        lines = body.splitlines()
+        chunks: list[str] = []
+        current: list[str] = []
+        size = 0
+        for line in lines:
+            if current and size + len(line) + 1 > chunk_chars:
+                chunks.append("\n".join(current))
+                current, size = [], 0
+            current.append(line)
+            size += len(line) + 1
+        if current:
+            chunks.append("\n".join(current))
+        return chunks or [""]
+
+
+class FrontCsvAdapter(SourceAdapter):
+    """Curate Front messages into conversation-level, PII-minimized records."""
+
+    TERMS = (
+        "onboard", "application", "packet", "rmis", "insurance", "coi", "tenstreet",
+        "training", "driver", "factoring", "payment", "toll", "trailer", "power only",
+        "lane", "load", "market", "status", "document", "w9", "h2s", "safeland",
+    )
+
+    async def capture(self, source: SourceDefinition) -> list[CapturedRecord]:
+        if not source.path:
+            raise ValueError("Front source is missing a path")
+        path = Path(source.path)
+        groups: dict[str, list[str]] = {}
+        for row in await asyncio.to_thread(self._read_rows, path):
+            text = " ".join((row.get(key) or "") for key in ("Subject", "Extract", "Tags"))
+            if not any(term in text.lower() for term in self.TERMS):
+                continue
+            conversation_id = row.get("Conversation ID") or row.get("Message ID") or "unknown"
+            groups.setdefault(conversation_id, []).append(text.strip())
+        stat = path.stat()
+        occurred_at = datetime.fromtimestamp(stat.st_mtime, tz=UTC)
+        records: list[CapturedRecord] = []
+        for conversation_id, messages in groups.items():
+            body = "\n".join(dict.fromkeys(message for message in messages if message))
+            records.append(CapturedRecord(
+                native_id=conversation_id, body=body, source_url=None, occurred_at=occurred_at,
+                metadata={"conversation_id": conversation_id, "message_count": len(messages)},
+            ))
+        return records
+
+    @staticmethod
+    def _read_rows(path: Path) -> list[dict[str, str]]:
+        with path.open(newline="", encoding="utf-8") as handle:
+            return list(csv.DictReader(handle))
