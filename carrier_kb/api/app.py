@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Annotated
-
 from fastapi import Depends, FastAPI, Request
 from pydantic import BaseModel, Field
 
@@ -44,7 +42,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     @app.post("/v1/answer")
-    async def answer(payload: AskRequest, caller: Annotated[Principal, Depends(principal)]):
+    async def answer(payload: AskRequest, caller: Principal = Depends(principal)):
         result = await answers.answer(payload.question, caller)
         return {
             "answer": result.text,
