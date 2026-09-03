@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI, Request
 from pydantic import BaseModel, Field
 
 from carrier_kb.auth.carrier_hub import CarrierHubAuthorizer
+from carrier_kb.carrier_hub.client import HttpCarrierHubContextClient
 from carrier_kb.domain import Principal
 from carrier_kb.retrieval.repository import KnowledgeRepository
 from carrier_kb.retrieval.service import AnswerService
@@ -25,7 +26,10 @@ class UnconfiguredRepository(KnowledgeRepository):
 def create_app() -> FastAPI:
     settings = Settings()
     authorizer = CarrierHubAuthorizer(settings)
-    answers = AnswerService(UnconfiguredRepository())
+    answers = AnswerService(
+        UnconfiguredRepository(),
+        carrier_hub=HttpCarrierHubContextClient(settings.carrier_hub_api_base_url),
+    )
     app = FastAPI(title="Carrier Onboarding KB", version="0.1.0")
 
     async def principal(request: Request) -> Principal:

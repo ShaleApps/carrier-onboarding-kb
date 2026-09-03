@@ -20,6 +20,7 @@ class Principal:
     audience: Audience
     application_id: str | None = None
     brokerage_id: str | None = None
+    access_token: str | None = None
 
     @property
     def searchable_corpora(self) -> tuple[Corpus, ...]:

@@ -57,6 +57,7 @@ class CarrierHubAuthorizer:
             audience=Audience.CARRIER,
             application_id=claims.get("application_id"),
             brokerage_id=claims.get("brokerage_id"),
+            access_token=token,
         )
 
     async def _internal_principal(self, token: str) -> Principal:
@@ -77,4 +78,4 @@ class CarrierHubAuthorizer:
         subject = item.get("authId") or item.get("id")
         if not subject:
             raise _forbidden("invalid Carrier Hub identity")
-        return Principal(subject=str(subject), audience=Audience.INTERNAL)
+        return Principal(subject=str(subject), audience=Audience.INTERNAL, access_token=token)
