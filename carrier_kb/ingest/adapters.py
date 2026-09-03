@@ -124,7 +124,7 @@ class FrontCsvAdapter(SourceAdapter):
         if not source.path:
             raise ValueError("Front source is missing a path")
         path = Path(source.path)
-        groups: dict[str, list[str]] = {}
+        groups: dict[str, list[tuple[str, str, str, str]]] = {}
         for row in await asyncio.to_thread(self._read_rows, path):
             text = " ".join((row.get(key) or "") for key in ("Subject", "Extract", "Tags"))
             lowered = text.lower()
@@ -135,15 +135,32 @@ class FrontCsvAdapter(SourceAdapter):
                 continue
             conversation_id = row.get("Conversation ID") or row.get("Message ID") or "unknown"
             topics = [topic for topic, terms in self.TOPICS.items() if any(term in lowered for term in terms)]
-            groups.setdefault(conversation_id, []).append(f"topics: {', '.join(topics)}\n{text.strip()}")
+            groups.setdefault(conversation_id, []).append((
+                f"topics: {', '.join(topics)}\n{text.strip()}",
+                row.get("Author") or "external",
+                row.get("Direction") or "unknown",
+                row.get("From") or "",
+            ))
         stat = path.stat()
         occurred_at = datetime.fromtimestamp(stat.st_mtime, tz=UTC)
         records: list[CapturedRecord] = []
         for conversation_id, messages in groups.items():
-            body = "\n".join(dict.fromkeys(message for message in messages if message))
+            body = "\n".join(dict.fromkeys(message[0] for message in messages if message[0]))
+            authors = sorted({message[1] for message in messages})
+            directions = sorted({message[2] for message in messages})
+            canonical = any(
+                author == "kushal_sethia" and direction.lower() == "outbound"
+                for _, author, direction, _ in messages
+            )
             records.append(CapturedRecord(
                 native_id=conversation_id, body=body, source_url=None, occurred_at=occurred_at,
-                metadata={"conversation_id": conversation_id, "message_count": len(messages)},
+                metadata={
+                    "conversation_id": conversation_id,
+                    "message_count": len(messages),
+                    "authors": authors,
+                    "directions": directions,
+                    "canonical_operator_guidance": canonical,
+                },
             ))
         return records
 

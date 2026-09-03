@@ -59,3 +59,23 @@ async def test_front_adapter_filters_and_groups_messages(tmp_path):
     assert records[0].native_id == "c1"
     assert "insurance" in records[0].body
     assert "verification" in records[0].body
+
+
+@pytest.mark.asyncio
+async def test_front_adapter_marks_kushal_outbound_as_canonical(tmp_path):
+    from carrier_kb.ingest.adapters import FrontCsvAdapter
+
+    csv_path = tmp_path / "front.csv"
+    csv_path.write_text(
+        "Conversation ID,Message ID,Subject,Extract,Tags,Author,Direction,From\n"
+        "c1,m1,W-9 question,Complete W-9 in Tenstreet,,kushal_sethia,Outbound,kushal@bainbridge.ai\n",
+        encoding="utf-8",
+    )
+    registry = tmp_path / "sources.yaml"
+    registry.write_text(
+        f"sources:\n  - id: front\n    kind: front_csv\n    visibility: carrier_internal\n    owner: ops\n    path: {csv_path}\n    refresh: manual\n",
+        encoding="utf-8",
+    )
+    source = load_registry(registry)[0]
+    records = await FrontCsvAdapter().capture(source)
+    assert records[0].metadata["canonical_operator_guidance"] is True
