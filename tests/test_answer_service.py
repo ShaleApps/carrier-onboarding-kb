@@ -54,3 +54,8 @@ async def test_without_application_id_only_policy_evidence_is_used():
 async def test_postgres_repository_never_queries_without_allowed_corpora():
     repository = PostgresKnowledgeRepository("postgresql://unused")
     assert await repository.search("anything", ()) == []
+
+
+def test_query_normalization_handles_carrier_aliases():
+    assert PostgresKnowledgeRepository._normalize_query("Where do I submit my W-9?") == "where do i submit my w9?"
+    assert "payment" in PostgresKnowledgeRepository._normalize_query("Can I use factoring if I need to get paid?")

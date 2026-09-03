@@ -43,6 +43,7 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         if not corpora:
             return []
         limit = max(1, min(limit, 20))
+        question = self._normalize_query(question)
         async with await psycopg.AsyncConnection.connect(self.dsn) as connection, connection.cursor() as cursor:
                 await cursor.execute(
                     """
@@ -72,3 +73,19 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
             )
             for row in rows
         ]
+
+    @staticmethod
+    def _normalize_query(question: str) -> str:
+        """Normalize common carrier phrasing before PostgreSQL tokenization."""
+        normalized = question.lower().replace("w-9", "w9").replace("w 9", "w9")
+        aliases = {
+            "paid": "payment",
+            "pay": "payment",
+            "factoring": "payment",
+            "paperwork": "document",
+            "documents": "document",
+            "application status": "status",
+        }
+        for source, target in aliases.items():
+            normalized = normalized.replace(source, target)
+        return normalized
