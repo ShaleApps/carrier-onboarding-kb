@@ -20,12 +20,15 @@ CREATE TABLE documents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   corpus kb_corpus NOT NULL,
   body text NOT NULL,
+  content_hash text NOT NULL,
   body_tsv tsvector GENERATED ALWAYS AS (to_tsvector('english', body)) STORED,
   embedding vector(3072),
   valid_from timestamptz NOT NULL DEFAULT now(),
   valid_until timestamptz,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE UNIQUE INDEX documents_corpus_content_hash_idx ON documents (corpus, content_hash);
 
 CREATE TABLE document_sources (
   document_id uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,

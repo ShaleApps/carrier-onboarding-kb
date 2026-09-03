@@ -37,10 +37,19 @@ class PostgresIngestWriter:
                     )
                     source_id = (await cursor.fetchone())[0]
                     await cursor.execute(
-                        "INSERT INTO documents (corpus, body) VALUES (%s, %s) RETURNING id",
-                        (source.corpus.value, record.body),
+                        """
+                        INSERT INTO documents (corpus, body, content_hash)
+                        VALUES (%s, %s, %s)
+                        ON CONFLICT (corpus, content_hash) DO UPDATE SET body = EXCLUDED.body
+                        RETURNING id
+                        """,
+                        (source.corpus.value, record.body, content_hash),
                     )
                     document_id = (await cursor.fetchone())[0]
+                    await cursor.execute(
+                        "DELETE FROM document_sources WHERE source_id = %s",
+                        (source_id,),
+                    )
                     await cursor.execute(
                         "INSERT INTO document_sources (document_id, source_id) VALUES (%s, %s)",
                         (document_id, source_id),
