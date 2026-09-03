@@ -8,28 +8,28 @@ intents:
       - "How many loads per day can I expect?"
       - "What's the catch with the 9.75 percent?"
     coverage: partial
-    canonical_sources: [front, carrier_hub]
+    canonical_sources: [front, ome_transcripts, carrier_hub]
   - id: payment_timing_factoring
     label: Payment timing, deposits, and factoring
     examples:
       - "How soon will I actually get paid?"
       - "Is there a factoring fee?"
     coverage: partial
-    canonical_sources: [front]
+    canonical_sources: [front, ome_transcripts]
   - id: equipment_and_lanes
     label: Equipment requirements and available lanes
     examples:
       - "What equipment do I need?"
       - "What lanes are available?"
     coverage: partial
-    canonical_sources: [front]
+    canonical_sources: [front, ome_transcripts]
   - id: onboarding_process
     label: Application and onboarding steps
     examples:
       - "How do I submit an application?"
       - "What does onboarding look like and how quickly can I start?"
     coverage: partial
-    canonical_sources: [carrier_hub, front]
+    canonical_sources: [carrier_hub, front, ome_transcripts]
   - id: application_status
     label: Application status and next action
     examples:
@@ -43,44 +43,44 @@ intents:
       - "How do I complete RMIS and insurance verification?"
       - "Why is my insurance still pending?"
     coverage: partial
-    canonical_sources: [front, carrier_hub]
+    canonical_sources: [front, ome_transcripts, carrier_hub]
   - id: documents_compliance
     label: W-9, authority, DOT/MC, and required documents
     examples:
       - "What do I need if I just got my authority?"
       - "Where do I submit my W-9?"
     coverage: partial
-    canonical_sources: [front]
+    canonical_sources: [front, ome_transcripts]
   - id: training
     label: Training, orientation, and prerequisites
     examples:
       - "What training do I need before onboarding?"
-    coverage: gap
-    canonical_sources: []
+    coverage: partial
+    canonical_sources: [front, ome_transcripts]
   - id: bonus_and_referrals
     label: Sign-on and referral bonuses
     examples:
       - "What's my sign-on bonus?"
       - "Is a driver already hauling eligible for the bonus?"
     coverage: partial
-    canonical_sources: [front]
+    canonical_sources: [front, ome_transcripts]
   - id: broker_value_and_trust
     label: Why use LoHi and trust/payment concerns
     examples:
       - "Why go through you instead of Halliburton directly?"
       - "Why would I add you if I'm already booked?"
     coverage: partial
-    canonical_sources: [front]
+    canonical_sources: [front, ome_transcripts]
   - id: support_and_escalation
     label: Human contact, callbacks, and stuck onboarding
     examples:
       - "Can I speak to someone?"
       - "Who should I contact if onboarding is stuck?"
     coverage: partial
-    canonical_sources: [front, carrier_hub]
+    canonical_sources: [front, ome_transcripts, carrier_hub]
   - id: eligibility_and_authority
     label: Eligibility for new authority and operating history
     examples:
       - "I just got my authority. Can I do this?"
-    coverage: gap
-    canonical_sources: []
+    coverage: partial_conflicting
+    canonical_sources: [front, ome_transcripts]
