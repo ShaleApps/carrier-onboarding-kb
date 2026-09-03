@@ -1,0 +1,20 @@
+services:
+  kb-postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: carrier_kb
+      POSTGRES_USER: carrier_kb
+      POSTGRES_PASSWORD: carrier_kb_dev_only
+    ports:
+      - "55432:5432"
+    volumes:
+      - carrier-kb-postgres:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carrier_kb -d carrier_kb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  carrier-kb-postgres:

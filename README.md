@@ -21,6 +21,19 @@ uv run uvicorn carrier_kb.api.app:create_app --factory --reload
 uv run pytest
 ```
 
+### Local database
+
+Start the isolated development database (Docker Desktop must be running):
+
+```bash
+docker compose up -d kb-postgres
+cp .env.example .env
+uv run carrier-kb-ingest --registry config/sources.yaml
+```
+
+The compose file uses port `55432` and a development-only password. Never use
+these credentials for a shared or production deployment.
+
 `config/sources.example.yaml` is a checked-in example only. Copy it to an untracked file and replace the placeholder IDs after a source-owner and visibility review.
 
 ## Core rules
