@@ -23,6 +23,9 @@ dependencies = [
 requires = ["hatchling>=1.26"]
 build-backend = "hatchling.build"
 
+[project.scripts]
+carrier-kb-ingest = "carrier_kb.ingest.cli:main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["carrier_kb"]
 
