@@ -19,7 +19,8 @@ class OmeTranscriptAdapter:
             await cursor.execute(
                 """
                 SELECT v.call_record_id, v.case_key, v.transcript_text,
-                       v.created_at, c.direction
+                       v.created_at, c.direction, c.duration_s, c.source_system,
+                       c.started_at
                 FROM public.recruiter_voice_transcript v
                 LEFT JOIN public.recruiter_call c ON c.call_id = v.call_record_id
                 WHERE v.transcript_text IS NOT NULL AND btrim(v.transcript_text) <> ''
@@ -33,9 +34,15 @@ class OmeTranscriptAdapter:
                 native_id=str(call_id),
                 body=transcript,
                 source_url=None,
-                occurred_at=created_at,
-                metadata={"case_key": case_key or "unknown", "direction": direction or "unknown", "historical": True},
+                occurred_at=started_at or created_at,
+                metadata={
+                    "case_key": case_key or "unknown",
+                    "direction": direction or "unknown",
+                    "duration_seconds": float(duration) if duration is not None else None,
+                    "source_system": source_system or "unknown",
+                    "historical": True,
+                },
             )
-            for call_id, case_key, transcript, created_at, direction in rows
+            for call_id, case_key, transcript, created_at, direction, duration, source_system, started_at in rows
             if call_id and created_at
         ]
