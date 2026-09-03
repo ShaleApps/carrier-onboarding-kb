@@ -5,6 +5,7 @@ sources:
     visibility: carrier_internal
     owner: carrier-onboarding@lohi.ai
     path: /absolute/path/to/carrier-onboarding-kb/docs/canonical-evidence-pack.md
+    chunk_chars: 1200
     refresh: manual
 
   # Interim local seed; replace with an approved, checked-in manifest entry.
