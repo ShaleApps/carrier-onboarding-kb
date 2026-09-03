@@ -22,7 +22,7 @@ CREATE TABLE documents (
   body text NOT NULL,
   content_hash text NOT NULL,
   body_tsv tsvector GENERATED ALWAYS AS (to_tsvector('english', body)) STORED,
-  embedding vector(3072),
+  embedding vector(1536),
   valid_from timestamptz NOT NULL DEFAULT now(),
   valid_until timestamptz,
   created_at timestamptz NOT NULL DEFAULT now()

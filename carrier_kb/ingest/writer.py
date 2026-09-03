@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 
 import psycopg
+from psycopg.types.json import Jsonb
 
 from carrier_kb.ingest.adapters import CapturedRecord
 from carrier_kb.ingest.registry import SourceDefinition
@@ -33,7 +34,7 @@ class PostgresIngestWriter:
                         RETURNING id
                         """,
                         (source.id, source.corpus.value, record.native_id, source.id,
-                         record.source_url, record.occurred_at, content_hash, record.metadata),
+                         record.source_url, record.occurred_at, content_hash, Jsonb(record.metadata)),
                     )
                     source_id = (await cursor.fetchone())[0]
                     await cursor.execute(
