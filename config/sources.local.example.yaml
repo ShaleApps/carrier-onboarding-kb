@@ -1,0 +1,22 @@
+# Copy to sources.local.yaml (gitignored) after source-owner review.
+# These local extracts are internal-only until each document is explicitly
+# approved for carrier-facing use.
+sources:
+  - id: marketing-text
+    kind: static_file
+    visibility: carrier_internal
+    owner: carrier-onboarding@lohi.ai
+    path: /Users/alexlim/Downloads/Marketing text.docx
+    refresh: manual
+  - id: churn-notes
+    kind: static_file
+    visibility: carrier_internal
+    owner: carrier-onboarding@lohi.ai
+    path: /Users/alexlim/Downloads/Reduce first 2 week churn .docx
+    refresh: manual
+  - id: front-kushal-export
+    kind: static_file
+    visibility: carrier_internal
+    owner: carrier-ops@lohi.ai
+    path: /Users/alexlim/Downloads/export-messages-2d0f54a17e9e2a0f4479-2026-09-02-245d-d06fc4.csv
+    refresh: manual

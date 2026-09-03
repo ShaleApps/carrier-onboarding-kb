@@ -1,9 +1,14 @@
 """Read-only source adapters. They emit source records; only the ingestion service writes KB rows."""
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from io import StringIO
 from pathlib import Path
+
+from docx import Document
+from openpyxl import load_workbook
 
 from carrier_kb.ingest.registry import SourceDefinition
 
@@ -50,9 +55,28 @@ class StaticFileAdapter(SourceAdapter):
         if not source.path:
             raise ValueError("static source is missing a path")
         path = Path(source.path)
-        body = path.read_text(encoding="utf-8")
+        body = self._read_body(path)
         stat = path.stat()
         return [CapturedRecord(
             native_id=str(path.resolve()), body=body, source_url=None,
             occurred_at=datetime.fromtimestamp(stat.st_mtime, tz=UTC), metadata={"filename": path.name},
         )]
+
+    @staticmethod
+    def _read_body(path: Path) -> str:
+        suffix = path.suffix.lower()
+        if suffix in {".txt", ".md"}:
+            return path.read_text(encoding="utf-8")
+        if suffix == ".csv":
+            rows = csv.reader(StringIO(path.read_text(encoding="utf-8")))
+            return "\n".join(" | ".join(cell.strip() for cell in row) for row in rows)
+        if suffix == ".docx":
+            return "\n".join(p.text.strip() for p in Document(path).paragraphs if p.text.strip())
+        if suffix == ".xlsx":
+            workbook = load_workbook(path, read_only=True, data_only=True)
+            return "\n".join(
+                " | ".join(str(cell) if cell is not None else "" for cell in row)
+                for sheet in workbook.worksheets
+                for row in sheet.iter_rows(values_only=True)
+            )
+        raise ValueError(f"unsupported static file type: {suffix}")
