@@ -109,6 +109,7 @@ class FrontCsvAdapter(SourceAdapter):
         "training", "driver", "factoring", "payment", "toll", "trailer", "power only",
         "lane", "load", "market", "status", "document", "w9", "h2s", "safeland",
     )
+    EXCLUDE_TERMS = ("meta ads receipt", "craigslist post", "paid posting")
 
     async def capture(self, source: SourceDefinition) -> list[CapturedRecord]:
         if not source.path:
@@ -117,7 +118,11 @@ class FrontCsvAdapter(SourceAdapter):
         groups: dict[str, list[str]] = {}
         for row in await asyncio.to_thread(self._read_rows, path):
             text = " ".join((row.get(key) or "") for key in ("Subject", "Extract", "Tags"))
-            if not any(term in text.lower() for term in self.TERMS):
+            lowered = text.lower()
+            if (
+                not any(term in lowered for term in self.TERMS)
+                or any(term in lowered for term in self.EXCLUDE_TERMS)
+            ):
                 continue
             conversation_id = row.get("Conversation ID") or row.get("Message ID") or "unknown"
             groups.setdefault(conversation_id, []).append(text.strip())

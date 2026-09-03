@@ -44,7 +44,8 @@ async def test_front_adapter_filters_and_groups_messages(tmp_path):
         "Conversation ID,Message ID,Subject,Extract,Tags\n"
         "c1,m1,RMIS question,How do I complete insurance?,\n"
         "c1,m2,RMIS question,Follow up on the packet,\n"
-        "c2,m3,Recruiting blast,Join our fleet today,\n",
+        "c2,m3,Recruiting blast,Join our fleet today,\n"
+        "c3,m4,Meta ads receipt,Payment summary for paid posting,\n",
         encoding="utf-8",
     )
     registry = tmp_path / "sources.yaml"
