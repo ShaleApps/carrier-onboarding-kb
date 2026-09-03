@@ -42,7 +42,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     @app.post("/v1/answer")
-    async def answer(payload: AskRequest, caller: Principal = Depends(principal)):
+    async def answer(payload: AskRequest, caller: Principal = Depends(principal)):  # noqa: B008
         result = await answers.answer(payload.question, caller)
         return {
             "answer": result.text,
