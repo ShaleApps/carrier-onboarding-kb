@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import time
 from uuid import uuid4
 
 import psycopg
@@ -12,6 +14,8 @@ from carrier_kb.domain import Principal
 from carrier_kb.retrieval.repository import KnowledgeRepository, PostgresKnowledgeRepository
 from carrier_kb.retrieval.service import AnswerService
 from carrier_kb.settings import Settings
+
+logger = logging.getLogger("carrier_kb.api")
 
 
 class AskRequest(BaseModel):
@@ -40,8 +44,18 @@ def create_app() -> FastAPI:
     @app.middleware("http")
     async def request_id_middleware(request: Request, call_next):
         request_id = request.headers.get("x-request-id") or str(uuid4())
+        request.state.request_id = request_id
+        started = time.perf_counter()
         response = await call_next(request)
+        elapsed_ms = round((time.perf_counter() - started) * 1000, 1)
         response.headers["x-request-id"] = request_id
+        logger.info("request_complete", extra={
+            "request_id": request_id,
+            "path": request.url.path,
+            "method": request.method,
+            "status_code": response.status_code,
+            "latency_ms": elapsed_ms,
+        })
         return response
 
     async def principal(request: Request) -> Principal:
@@ -66,8 +80,14 @@ def create_app() -> FastAPI:
         return {"status": "ready" if ready else "not_ready", "database": "ok" if database_ready else "unavailable"}
 
     @app.post("/v1/answer")
-    async def answer(payload: AskRequest, caller: Principal = Depends(principal)):  # noqa: B008
+    async def answer(request: Request, payload: AskRequest, caller: Principal = Depends(principal)):  # noqa: B008
         result = await answers.answer(payload.question, caller)
+        logger.info("answer_complete", extra={
+            "request_id": request.state.request_id,
+            "answer_type": result.answer_type,
+            "confidence": result.confidence,
+            "evidence_count": len(result.evidence),
+        })
         return {
             "answer": result.text,
             "answer_type": result.answer_type,
