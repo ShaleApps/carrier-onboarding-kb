@@ -53,6 +53,21 @@ def classify(question: str) -> str:
     return "unclassified"
 
 
+def classify_kind(speaker: str, question: str) -> str:
+    """Distinguish real carrier turns from scripted and quoted context."""
+    lowered = question.lower()
+    if any(marker in lowered for marker in (
+        "prior cross-channel history", "email/inbound", "email/outbound",
+        "sms/inbound", "sms/outbound", "plus ", "sent from my iphone",
+    )):
+        return "embedded_context"
+    if speaker == "agent":
+        return "agent_script"
+    if speaker in {"carrier", "caller"}:
+        return "carrier_question"
+    return "unattributed_question"
+
+
 def extract_questions(transcript: str) -> list[tuple[str, str]]:
     """Return (speaker, redacted question) pairs, without topic filtering."""
     result: list[tuple[str, str]] = []
@@ -93,6 +108,7 @@ async def build_inventory(dsn: str, output: Path) -> dict[str, object]:
                     "speaker": speaker,
                     "question": question,
                     "category": classify(question),
+                    "kind": classify_kind(speaker, question),
                 }
             )
 
@@ -117,9 +133,12 @@ def main() -> None:
         parser.error("OME_ANALYTICS_DSN is required")
     payload = asyncio.run(build_inventory(dsn, args.output))
     counts = Counter(record["category"] for record in payload["records"])
+    kinds = Counter(record["kind"] for record in payload["records"])
     print(f"scanned {payload['transcripts_scanned']} transcripts")
     print(f"extracted {payload['question_utterances']} question utterances")
     print(f"unique normalized questions: {payload['unique_questions']}")
+    for kind, count in kinds.most_common():
+        print(f"{kind}: {count}")
     for category, count in counts.most_common():
         print(f"{category}: {count}")
 
