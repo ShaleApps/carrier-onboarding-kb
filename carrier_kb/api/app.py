@@ -4,8 +4,10 @@ import logging
 import time
 from uuid import uuid4
 
+import httpx
 import psycopg
 from fastapi import Depends, FastAPI, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from carrier_kb.auth.carrier_hub import CarrierHubAuthorizer
@@ -81,7 +83,18 @@ def create_app() -> FastAPI:
 
     @app.post("/v1/answer")
     async def answer(request: Request, payload: AskRequest, caller: Principal = Depends(principal)):  # noqa: B008
-        result = await answers.answer(payload.question, caller)
+        try:
+            result = await answers.answer(payload.question, caller)
+        except (psycopg.Error, httpx.HTTPError, TimeoutError):
+            logger.exception("answer_dependency_failure", extra={"request_id": request.state.request_id})
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "error": "service temporarily unavailable",
+                    "message": "Please retry shortly or contact your LoHi recruiter.",
+                    "request_id": request.state.request_id,
+                },
+            )
         logger.info("answer_complete", extra={
             "request_id": request.state.request_id,
             "answer_type": result.answer_type,
