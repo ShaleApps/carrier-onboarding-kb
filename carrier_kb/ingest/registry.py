@@ -8,7 +8,7 @@ import yaml
 
 from carrier_kb.domain import Corpus
 
-SourceKind = Literal["google_drive", "slack", "lohi_view", "static_file", "front_csv"]
+SourceKind = Literal["google_drive", "slack", "lohi_view", "static_file", "front_csv", "ome_transcripts"]
 
 
 @dataclass(frozen=True)
@@ -44,6 +44,8 @@ def load_registry(path: Path) -> list[SourceDefinition]:
             raise ValueError(f"{source_id}: LoHi source needs a named view")
         if kind in {"static_file", "front_csv"} and not source.get("path"):
             raise ValueError(f"{source_id}: file source needs a path")
+        if kind == "ome_transcripts" and source.get("visibility") != "carrier_internal":
+            raise ValueError(f"{source_id}: OME transcripts must be internal")
         chunk_chars = int(source.get("chunk_chars", 12000))
         if chunk_chars < 1000 or chunk_chars > 50000:
             raise ValueError(f"{source_id}: chunk_chars must be between 1000 and 50000")

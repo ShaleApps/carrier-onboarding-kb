@@ -8,6 +8,12 @@ sources:
   #   path: /absolute/path/to/reviewed-notes.txt
   #   refresh: manual
 
+  - id: ome-carrier-transcripts
+    kind: ome_transcripts
+    visibility: carrier_internal
+    owner: carrier-onboarding@lohi.ai
+    refresh: "0 */6 * * *"
+
   - id: carrier-guide
     kind: google_drive
     visibility: carrier_public

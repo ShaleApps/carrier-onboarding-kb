@@ -5,6 +5,7 @@ import asyncio
 from pathlib import Path
 
 from carrier_kb.ingest.adapters import FrontCsvAdapter, StaticFileAdapter
+from carrier_kb.ingest.ome import OmeTranscriptAdapter
 from carrier_kb.ingest.registry import load_registry
 from carrier_kb.ingest.writer import PostgresIngestWriter
 from carrier_kb.settings import Settings
@@ -22,9 +23,14 @@ async def ingest(registry_path: Path, source_id: str | None = None) -> int:
     writer = PostgresIngestWriter(settings.kb_dsn)
     total = 0
     for source in sources:
-        if source.kind not in {"static_file", "front_csv"}:
+        if source.kind not in {"static_file", "front_csv", "ome_transcripts"}:
             raise RuntimeError(f"adapter not enabled for source kind: {source.kind}")
-        adapter = FrontCsvAdapter() if source.kind == "front_csv" else StaticFileAdapter()
+        if source.kind == "front_csv":
+            adapter = FrontCsvAdapter()
+        elif source.kind == "ome_transcripts":
+            adapter = OmeTranscriptAdapter(settings.ome_analytics_dsn)
+        else:
+            adapter = StaticFileAdapter()
         records = await adapter.capture(source)
         total += await writer.write(source, records)
         print(f"ingested {len(records)} record(s): {source.id}")
