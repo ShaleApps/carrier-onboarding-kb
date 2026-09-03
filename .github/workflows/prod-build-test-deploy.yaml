@@ -1,9 +1,9 @@
-name: '[STG] Build-Test-Deploy carrier-onboarding-kb'
+name: '[PROD] Build-Test-Deploy carrier-onboarding-kb'
 
 on:
   workflow_dispatch:
   push:
-    branches: ["stage"]
+    branches: ["main"]
 
 jobs:
   test:
@@ -36,9 +36,9 @@ jobs:
       id-token: write
       pull-requests: write
     with:
-      GKE_CLUSTER: 'vrt-lohi-s-gke-k8s-usc1'
-      HELM_RELEASE: 'carrier-onboarding-kb-stage'
+      GKE_CLUSTER: 'vrt-lohi-p-gke-k8s-usc1'
+      HELM_RELEASE: 'carrier-onboarding-kb'
       HELM_RELEASE_NAMESPACE: 'lohi'
       HELM_OVERRIDES: '--set image.tag=${{ github.sha }}'
-      HELM_VALUES_FILE: 'helm/dev_values.yaml'
+      HELM_VALUES_FILE: 'helm/prod_values.yaml'
       HELM_CHART_VERSION: '1.2.0'

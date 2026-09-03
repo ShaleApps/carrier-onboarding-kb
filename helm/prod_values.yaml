@@ -1,0 +1,55 @@
+# Production values. Secrets are injected by the cluster Secret/ExternalSecret.
+replicaCount: 2
+
+image:
+  repository: us-central1-docker.pkg.dev/lohi-project-546094/lohi-docker-repo/shaleapps/carrier-onboarding-kb
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets:
+  - name: dockersecret
+
+nameOverride: "carrier-onboarding-kb"
+fullnameOverride: "carrier-onboarding-kb"
+args: []
+
+env:
+  - name: PORT
+    value: "8080"
+  - name: ANSWER_SYNTHESIS_ENABLED
+    value: "false"
+
+externalSecrets: []
+
+serviceAccount:
+  create: false
+  automount: true
+  name: "go-profilerksa"
+
+service:
+  - name: carrier-onboarding-kb
+    port: 8080
+    targetPort: 8080
+
+ingress:
+  enabled: false
+
+resources:
+  limits:
+    cpu: "1"
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+
+autoscaling:
+  enabled: false
