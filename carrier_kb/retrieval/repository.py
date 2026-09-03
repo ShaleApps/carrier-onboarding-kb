@@ -57,6 +57,7 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                     WHERE d.corpus = ANY(%s::kb_corpus[])
                       AND d.valid_from <= now()
                       AND (d.valid_until IS NULL OR d.valid_until > now())
+                      AND (s.valid_until IS NULL OR s.valid_until > now())
                       AND d.body_tsv @@ replace(plainto_tsquery('english', %s)::text, ' & ', ' | ')::tsquery
                     ORDER BY ts_rank_cd(
                                d.body_tsv,
