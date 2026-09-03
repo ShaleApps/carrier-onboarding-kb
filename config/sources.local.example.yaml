@@ -2,6 +2,12 @@
 # These local extracts are internal-only until each document is explicitly
 # approved for carrier-facing use.
 sources:
+  - id: ome-carrier-transcripts
+    kind: ome_transcripts
+    visibility: carrier_internal
+    owner: carrier-onboarding@lohi.ai
+    refresh: manual
+
   - id: marketing-text
     kind: static_file
     visibility: carrier_internal

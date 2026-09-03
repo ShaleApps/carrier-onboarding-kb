@@ -7,7 +7,7 @@ from carrier_kb.ingest.registry import SourceDefinition
 
 
 class OmeTranscriptAdapter:
-    """Read-only adapter for the approved OME voice-call transcript table."""
+    """Read-only adapter for OME's recruiter voice transcripts."""
 
     def __init__(self, dsn: str):
         if not dsn:
@@ -16,24 +16,26 @@ class OmeTranscriptAdapter:
 
     async def capture(self, source: SourceDefinition) -> list[CapturedRecord]:
         async with await psycopg.AsyncConnection.connect(self.dsn) as connection, connection.cursor() as cursor:
-                await cursor.execute(
-                    """
-                    SELECT call_id, call_type, transcript, called_at
-                    FROM nucor.voice_calls
-                    WHERE transcript IS NOT NULL AND btrim(transcript) <> ''
-                    ORDER BY called_at DESC NULLS LAST
-                    LIMIT 10000
-                    """
-                )
-                rows = await cursor.fetchall()
+            await cursor.execute(
+                """
+                SELECT v.call_record_id, v.case_key, v.transcript_text,
+                       v.created_at, c.direction
+                FROM public.recruiter_voice_transcript v
+                LEFT JOIN public.recruiter_call c ON c.call_id = v.call_record_id
+                WHERE v.transcript_text IS NOT NULL AND btrim(v.transcript_text) <> ''
+                ORDER BY v.created_at DESC NULLS LAST
+                LIMIT 10000
+                """
+            )
+            rows = await cursor.fetchall()
         return [
             CapturedRecord(
                 native_id=str(call_id),
                 body=transcript,
                 source_url=None,
-                occurred_at=called_at,
-                metadata={"call_type": call_type or "unknown", "historical": True},
+                occurred_at=created_at,
+                metadata={"case_key": case_key or "unknown", "direction": direction or "unknown", "historical": True},
             )
-            for call_id, call_type, transcript, called_at in rows
-            if call_id and called_at
+            for call_id, case_key, transcript, created_at, direction in rows
+            if call_id and created_at
         ]
