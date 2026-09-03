@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from openai import AsyncOpenAI
+
 from carrier_kb.carrier_hub.client import CarrierHubContextClient
 from carrier_kb.carrier_hub.models import ContextAudience
 from carrier_kb.domain import Principal
@@ -18,9 +20,13 @@ class Answer:
 
 
 class AnswerService:
-    def __init__(self, repository: KnowledgeRepository, carrier_hub: CarrierHubContextClient | None = None):
+    def __init__(self, repository: KnowledgeRepository, carrier_hub: CarrierHubContextClient | None = None,
+                 *, openai_api_key: str = "", answer_model: str = "gpt-5-mini", synthesis_enabled: bool = False):
         self.repository = repository
         self.carrier_hub = carrier_hub
+        self.synthesis_enabled = synthesis_enabled and bool(openai_api_key)
+        self.answer_model = answer_model
+        self.openai = AsyncOpenAI(api_key=openai_api_key) if self.synthesis_enabled else None
 
     async def answer(self, question: str, principal: Principal) -> Answer:
         evidence = await self.repository.search(question, principal.searchable_corpora)
@@ -57,6 +63,8 @@ class AnswerService:
         text = evidence[0].body
         lowered = text.lower()
         conditional = any(term in lowered for term in ("context-dependent", "conflicting", "program-specific"))
+        if self.openai and not conditional:
+            text = await self._synthesize(question, evidence)
         return Answer(
             text=text,
             evidence=tuple(evidence),
@@ -65,6 +73,22 @@ class AnswerService:
             next_action=("Confirm the applicable program or region with your LoHi recruiter."
                           if conditional else None),
         )
+
+    async def _synthesize(self, question: str, evidence: list[Evidence]) -> str:
+        source_text = "\n\n".join(item.body for item in evidence[:8])
+        response = await self.openai.chat.completions.create(
+            model=self.answer_model,
+            temperature=0,
+            messages=[
+                {"role": "system", "content": (
+                    "Answer only from the supplied approved evidence. Be concise. "
+                    "Do not invent policy, dates, amounts, or requirements. If the "
+                    "evidence is insufficient, say so and advise contacting a recruiter."
+                )},
+                {"role": "user", "content": f"Question: {question}\n\nApproved evidence:\n{source_text}"},
+            ],
+        )
+        return response.choices[0].message.content or evidence[0].body
 
     @staticmethod
     def _context_body(context) -> str:

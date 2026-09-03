@@ -30,6 +30,9 @@ def create_app() -> FastAPI:
     answers = AnswerService(
         repository,
         carrier_hub=HttpCarrierHubContextClient(settings.carrier_hub_api_base_url),
+        openai_api_key=settings.openai_api_key,
+        answer_model=settings.answer_model,
+        synthesis_enabled=settings.answer_synthesis_enabled,
     )
     app = FastAPI(title="Carrier Onboarding KB", version="0.1.0")
 
