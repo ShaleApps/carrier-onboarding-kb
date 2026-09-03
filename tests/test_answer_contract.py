@@ -34,6 +34,33 @@ class LiveCarrierHub:
         )
 
 
+class FakeCompletions:
+    def __init__(self, content=None, error=None):
+        self.content = content
+        self.error = error
+
+    async def create(self, **kwargs):
+        if self.error:
+            raise self.error
+        class Message:
+            pass
+        class Choice:
+            pass
+        message, choice = Message(), Choice()
+        message.content = self.content
+        choice.message = message
+        class Response:
+            pass
+        response = Response()
+        response.choices = [choice]
+        return response
+
+
+class FakeOpenAI:
+    def __init__(self, content=None, error=None):
+        self.chat = type("Chat", (), {"completions": FakeCompletions(content, error)})()
+
+
 @pytest.mark.asyncio
 async def test_unsupported_answer_is_explicit_handoff():
     result = await AnswerService(EmptyRepository()).answer(
@@ -64,3 +91,30 @@ async def test_live_status_is_structured():
     assert result.answer_type == "application_status"
     assert result.confidence == "live"
     assert "in_progress" in result.text
+
+
+@pytest.mark.asyncio
+async def test_synthesis_uses_model_text_when_enabled():
+    evidence = Evidence("policy", "Approved policy text", (Citation("front", "Policy", None),))
+    service = AnswerService(FixedRepository([evidence]), synthesis_enabled=False)
+    service.openai = FakeOpenAI("Concise grounded answer")
+    result = await service.answer("What is the policy?", Principal("carrier", Audience.CARRIER))
+    assert result.text == "Concise grounded answer"
+
+
+@pytest.mark.asyncio
+async def test_synthesis_empty_response_falls_back_to_evidence():
+    evidence = Evidence("policy", "Approved policy text", (Citation("front", "Policy", None),))
+    service = AnswerService(FixedRepository([evidence]), synthesis_enabled=False)
+    service.openai = FakeOpenAI(None)
+    result = await service.answer("What is the policy?", Principal("carrier", Audience.CARRIER))
+    assert result.text == "Approved policy text"
+
+
+@pytest.mark.asyncio
+async def test_synthesis_failure_falls_back_to_evidence():
+    evidence = Evidence("policy", "Approved policy text", (Citation("front", "Policy", None),))
+    service = AnswerService(FixedRepository([evidence]), synthesis_enabled=False)
+    service.openai = FakeOpenAI(error=RuntimeError("provider unavailable"))
+    result = await service.answer("What is the policy?", Principal("carrier", Audience.CARRIER))
+    assert result.text == "Approved policy text"

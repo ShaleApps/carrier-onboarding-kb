@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, OpenAIError
 
 from carrier_kb.carrier_hub.client import CarrierHubContextClient
 from carrier_kb.carrier_hub.models import ContextAudience
@@ -76,19 +76,22 @@ class AnswerService:
 
     async def _synthesize(self, question: str, evidence: list[Evidence]) -> str:
         source_text = "\n\n".join(item.body for item in evidence[:8])
-        response = await self.openai.chat.completions.create(
-            model=self.answer_model,
-            temperature=0,
-            messages=[
-                {"role": "system", "content": (
-                    "Answer only from the supplied approved evidence. Be concise. "
-                    "Do not invent policy, dates, amounts, or requirements. If the "
-                    "evidence is insufficient, say so and advise contacting a recruiter."
-                )},
-                {"role": "user", "content": f"Question: {question}\n\nApproved evidence:\n{source_text}"},
-            ],
-        )
-        return response.choices[0].message.content or evidence[0].body
+        try:
+            response = await self.openai.chat.completions.create(
+                model=self.answer_model,
+                temperature=0,
+                messages=[
+                    {"role": "system", "content": (
+                        "Answer only from the supplied approved evidence. Be concise. "
+                        "Do not invent policy, dates, amounts, or requirements. If the "
+                        "evidence is insufficient, say so and advise contacting a recruiter."
+                    )},
+                    {"role": "user", "content": f"Question: {question}\n\nApproved evidence:\n{source_text}"},
+                ],
+            )
+            return response.choices[0].message.content or evidence[0].body
+        except (OpenAIError, RuntimeError, TimeoutError):
+            return evidence[0].body
 
     @staticmethod
     def _context_body(context) -> str:
