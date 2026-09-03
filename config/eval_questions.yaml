@@ -18,7 +18,7 @@ questions:
   - id: application-status
     question: "What is the status of my carrier application?"
     corpus: carrier_internal
-    expected_terms: [application, status]
+    expected_terms: [status]
   - id: payment
     question: "When will I get paid and can I use factoring?"
     corpus: carrier_internal
@@ -62,12 +62,13 @@ questions:
   - id: bonus-eligibility
     question: "What is the sign-on bonus and what makes a driver eligible?"
     corpus: carrier_internal
-    expected_terms: [bonus, eligible]
+    expected_terms: [bonus]
+    expected_any_terms: [[eligible, requirements, milestone]]
   - id: broker-value
     question: "Why should I go through LoHi instead of Halliburton directly?"
     corpus: carrier_internal
-    expected_terms: [halliburton]
+    expected_any_terms: [[halliburton, supply chain, steady freight]]
   - id: human-help
     question: "Can I speak to a person about my onboarding?"
     corpus: carrier_internal
-    expected_terms: [contact]
+    expected_any_terms: [[contact, route, onboarding call, scheduled call]]

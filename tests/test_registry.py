@@ -8,7 +8,8 @@ from carrier_kb.ingest.registry import load_registry
 def test_example_registry_loads():
     registry = load_registry(Path("config/sources.example.yaml"))
     assert [item.id for item in registry] == [
-        "ome-carrier-transcripts", "carrier-guide", "carrier-ops-decisions", "onboarding-status-explanations"
+        "canonical-evidence-pack", "ome-carrier-transcripts", "carrier-guide",
+        "carrier-ops-decisions", "onboarding-status-explanations"
     ]
 
 
