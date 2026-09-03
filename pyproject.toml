@@ -25,6 +25,7 @@ build-backend = "hatchling.build"
 
 [project.scripts]
 carrier-kb-ingest = "carrier_kb.ingest.cli:main"
+carrier-kb-ome-questions = "carrier_kb.ingest.question_inventory:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["carrier_kb"]
