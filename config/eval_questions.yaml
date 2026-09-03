@@ -1,0 +1,33 @@
+questions:
+  - id: rmis-insurance
+    question: "How do I complete RMIS and insurance verification?"
+    corpus: carrier_internal
+    expected_terms: [rmis, insurance]
+  - id: evident-status
+    question: "Why is my Evident verification still pending?"
+    corpus: carrier_internal
+    expected_terms: [evident]
+  - id: training
+    question: "What training do I need to complete before onboarding?"
+    corpus: carrier_internal
+    expected_terms: [training]
+  - id: w9
+    question: "Where do I submit my W-9?"
+    corpus: carrier_internal
+    expected_terms: [w9]
+  - id: application-status
+    question: "What is the status of my carrier application?"
+    corpus: carrier_internal
+    expected_terms: [application, status]
+  - id: payment
+    question: "When will I get paid and can I use factoring?"
+    corpus: carrier_internal
+    expected_terms: [payment]
+  - id: equipment
+    question: "What equipment and lanes are available?"
+    corpus: carrier_internal
+    expected_terms: [equipment]
+  - id: escalation
+    question: "Who should I contact if onboarding is stuck?"
+    corpus: carrier_internal
+    expected_terms: [contact]
