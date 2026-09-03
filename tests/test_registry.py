@@ -58,3 +58,4 @@ async def test_front_adapter_filters_and_groups_messages(tmp_path):
     assert len(records) == 1
     assert records[0].native_id == "c1"
     assert "insurance" in records[0].body
+    assert "verification" in records[0].body

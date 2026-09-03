@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from io import StringIO
 from pathlib import Path
+from typing import ClassVar
 
 from docx import Document
 from openpyxl import load_workbook
@@ -104,12 +105,20 @@ class StaticFileAdapter(SourceAdapter):
 class FrontCsvAdapter(SourceAdapter):
     """Curate Front messages into conversation-level, PII-minimized records."""
 
-    TERMS = (
+    TERMS: ClassVar[tuple[str, ...]] = (
         "onboard", "application", "packet", "rmis", "insurance", "coi", "tenstreet",
         "training", "driver", "factoring", "payment", "toll", "trailer", "power only",
         "lane", "load", "market", "status", "document", "w9", "h2s", "safeland",
     )
-    EXCLUDE_TERMS = ("meta ads receipt", "craigslist post", "paid posting")
+    EXCLUDE_TERMS: ClassVar[tuple[str, ...]] = ("meta ads receipt", "craigslist post", "paid posting")
+    TOPICS: ClassVar[dict[str, tuple[str, ...]]] = {
+        "verification": ("rmis", "evident", "insurance", "coi"),
+        "training": ("training", "tenstreet", "safeland", "w9", "h2s"),
+        "payment": ("payment", "paid", "factoring", "rate", "invoice"),
+        "equipment": ("equipment", "trailer", "power only", "flatbed"),
+        "status": ("status", "application", "onboard", "packet", "document"),
+        "escalation": ("contact", "follow up", "follow-up", "stuck", "help"),
+    }
 
     async def capture(self, source: SourceDefinition) -> list[CapturedRecord]:
         if not source.path:
@@ -125,7 +134,8 @@ class FrontCsvAdapter(SourceAdapter):
             ):
                 continue
             conversation_id = row.get("Conversation ID") or row.get("Message ID") or "unknown"
-            groups.setdefault(conversation_id, []).append(text.strip())
+            topics = [topic for topic, terms in self.TOPICS.items() if any(term in lowered for term in terms)]
+            groups.setdefault(conversation_id, []).append(f"topics: {', '.join(topics)}\n{text.strip()}")
         stat = path.stat()
         occurred_at = datetime.fromtimestamp(stat.st_mtime, tz=UTC)
         records: list[CapturedRecord] = []
