@@ -31,3 +31,43 @@ questions:
     question: "Who should I contact if onboarding is stuck?"
     corpus: carrier_internal
     expected_terms: [contact]
+  - id: pay-per-load
+    question: "How much do you pay per load and how many loads can I expect?"
+    corpus: carrier_internal
+    expected_terms: [pay, load]
+  - id: factoring-timing
+    question: "How soon will I get paid and can I use factoring?"
+    corpus: carrier_internal
+    expected_terms: [paid, factoring]
+  - id: equipment-details
+    question: "What equipment do I need and what lanes are available?"
+    corpus: carrier_internal
+    expected_terms: [equipment, lane]
+  - id: onboarding-steps
+    question: "How do I submit an application and get started?"
+    corpus: carrier_internal
+    expected_terms: [application, onboarding]
+  - id: authority-eligibility
+    question: "I just got my authority. Am I eligible to haul with you?"
+    corpus: carrier_internal
+    expected_terms: [authority]
+  - id: training-requirements
+    question: "What training do I need before I can start?"
+    corpus: carrier_internal
+    expected_terms: [training]
+  - id: insurance-mcp
+    question: "Why is my insurance not showing in MCP, and what do I need to send?"
+    corpus: carrier_internal
+    expected_terms: [insurance, mcp]
+  - id: bonus-eligibility
+    question: "What is the sign-on bonus and what makes a driver eligible?"
+    corpus: carrier_internal
+    expected_terms: [bonus, eligible]
+  - id: broker-value
+    question: "Why should I go through LoHi instead of Halliburton directly?"
+    corpus: carrier_internal
+    expected_terms: [halliburton]
+  - id: human-help
+    question: "Can I speak to a person about my onboarding?"
+    corpus: carrier_internal
+    expected_terms: [contact]
