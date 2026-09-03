@@ -13,7 +13,7 @@ from carrier_kb.settings import Settings
 
 async def evaluate(path: Path) -> list[dict[str, object]]:
     settings = Settings()
-    repository = PostgresKnowledgeRepository(settings.kb_dsn)
+    repository = PostgresKnowledgeRepository(settings.kb_dsn, settings.kb_schema)
     cases = yaml.safe_load(path.read_text(encoding="utf-8")).get("questions", [])
     results = []
     for case in cases:

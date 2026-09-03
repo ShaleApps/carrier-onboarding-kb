@@ -20,7 +20,7 @@ async def ingest(registry_path: Path, source_id: str | None = None) -> int:
         sources = [source for source in sources if source.id == source_id]
         if not sources:
             raise ValueError(f"source not found in registry: {source_id}")
-    writer = PostgresIngestWriter(settings.kb_dsn)
+    writer = PostgresIngestWriter(settings.kb_dsn, settings.kb_schema)
     total = 0
     for source in sources:
         if source.kind not in {"static_file", "front_csv", "ome_transcripts"}:

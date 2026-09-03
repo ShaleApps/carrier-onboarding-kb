@@ -33,7 +33,7 @@ class UnconfiguredRepository(KnowledgeRepository):
 def create_app() -> FastAPI:
     settings = Settings()
     authorizer = CarrierHubAuthorizer(settings)
-    repository = PostgresKnowledgeRepository(settings.kb_dsn) if settings.kb_dsn else UnconfiguredRepository()
+    repository = PostgresKnowledgeRepository(settings.kb_dsn, settings.kb_schema) if settings.kb_dsn else UnconfiguredRepository()
     answers = AnswerService(
         repository,
         carrier_hub=HttpCarrierHubContextClient(settings.carrier_hub_api_base_url),

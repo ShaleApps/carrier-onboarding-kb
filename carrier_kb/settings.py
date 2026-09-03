@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     kb_dsn: str = ""
+    kb_schema: str = "carrier_kb"
     openai_api_key: str = ""
     embed_model: str = "text-embedding-3-large"
     answer_model: str = "gpt-5-mini"
