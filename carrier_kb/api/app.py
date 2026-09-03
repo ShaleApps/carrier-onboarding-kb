@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
 from fastapi import Depends, FastAPI, Request
 from pydantic import BaseModel, Field
 
@@ -34,12 +36,24 @@ def create_app() -> FastAPI:
     )
     app = FastAPI(title="Carrier Onboarding KB", version="0.1.0")
 
+    @app.middleware("http")
+    async def request_id_middleware(request: Request, call_next):
+        request_id = request.headers.get("x-request-id") or str(uuid4())
+        response = await call_next(request)
+        response.headers["x-request-id"] = request_id
+        return response
+
     async def principal(request: Request) -> Principal:
         return await authorizer.principal(request)
 
     @app.get("/healthz")
     async def healthz():
         return {"status": "ok"}
+
+    @app.get("/readyz")
+    async def readyz():
+        configured = bool(settings.kb_dsn and settings.carrier_hub_api_base_url)
+        return {"status": "ready" if configured else "not_ready", "dependencies_configured": configured}
 
     @app.post("/v1/answer")
     async def answer(payload: AskRequest, caller: Principal = Depends(principal)):  # noqa: B008
