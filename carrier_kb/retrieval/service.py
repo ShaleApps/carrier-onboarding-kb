@@ -54,7 +54,17 @@ class AnswerService:
                 confidence="live",
                 next_action=action,
             )
-        return Answer(text=evidence[0].body, evidence=tuple(evidence))
+        text = evidence[0].body
+        lowered = text.lower()
+        conditional = any(term in lowered for term in ("context-dependent", "conflicting", "program-specific"))
+        return Answer(
+            text=text,
+            evidence=tuple(evidence),
+            answer_type="conditional_policy" if conditional else "policy",
+            confidence="conditional" if conditional else "supported",
+            next_action=("Confirm the applicable program or region with your LoHi recruiter."
+                          if conditional else None),
+        )
 
     @staticmethod
     def _context_body(context) -> str:
