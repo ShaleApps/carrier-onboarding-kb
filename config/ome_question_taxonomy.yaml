@@ -1,0 +1,86 @@
+# Evidence-derived taxonomy from the full OME transcript pass.
+# `coverage` describes current canonical source coverage, not an answer.
+intents:
+  - id: pay_rates_loads
+    label: Pay, rates, and load volume
+    examples:
+      - "How much do you pay per load?"
+      - "How many loads per day can I expect?"
+      - "What's the catch with the 9.75 percent?"
+    coverage: partial
+    canonical_sources: [front, carrier_hub]
+  - id: payment_timing_factoring
+    label: Payment timing, deposits, and factoring
+    examples:
+      - "How soon will I actually get paid?"
+      - "Is there a factoring fee?"
+    coverage: partial
+    canonical_sources: [front]
+  - id: equipment_and_lanes
+    label: Equipment requirements and available lanes
+    examples:
+      - "What equipment do I need?"
+      - "What lanes are available?"
+    coverage: partial
+    canonical_sources: [front]
+  - id: onboarding_process
+    label: Application and onboarding steps
+    examples:
+      - "How do I submit an application?"
+      - "What does onboarding look like and how quickly can I start?"
+    coverage: partial
+    canonical_sources: [carrier_hub, front]
+  - id: application_status
+    label: Application status and next action
+    examples:
+      - "How can you check the status?"
+      - "What is the status of my carrier application?"
+    coverage: covered_with_live_context
+    canonical_sources: [carrier_hub]
+  - id: rmis_insurance
+    label: RMIS, insurance, and COI verification
+    examples:
+      - "How do I complete RMIS and insurance verification?"
+      - "Why is my insurance still pending?"
+    coverage: partial
+    canonical_sources: [front, carrier_hub]
+  - id: documents_compliance
+    label: W-9, authority, DOT/MC, and required documents
+    examples:
+      - "What do I need if I just got my authority?"
+      - "Where do I submit my W-9?"
+    coverage: partial
+    canonical_sources: [front]
+  - id: training
+    label: Training, orientation, and prerequisites
+    examples:
+      - "What training do I need before onboarding?"
+    coverage: gap
+    canonical_sources: []
+  - id: bonus_and_referrals
+    label: Sign-on and referral bonuses
+    examples:
+      - "What's my sign-on bonus?"
+      - "Is a driver already hauling eligible for the bonus?"
+    coverage: partial
+    canonical_sources: [front]
+  - id: broker_value_and_trust
+    label: Why use LoHi and trust/payment concerns
+    examples:
+      - "Why go through you instead of Halliburton directly?"
+      - "Why would I add you if I'm already booked?"
+    coverage: partial
+    canonical_sources: [front]
+  - id: support_and_escalation
+    label: Human contact, callbacks, and stuck onboarding
+    examples:
+      - "Can I speak to someone?"
+      - "Who should I contact if onboarding is stuck?"
+    coverage: partial
+    canonical_sources: [front, carrier_hub]
+  - id: eligibility_and_authority
+    label: Eligibility for new authority and operating history
+    examples:
+      - "I just got my authority. Can I do this?"
+    coverage: gap
+    canonical_sources: []
