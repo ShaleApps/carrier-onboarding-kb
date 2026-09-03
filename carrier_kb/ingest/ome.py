@@ -9,6 +9,11 @@ from carrier_kb.ingest.registry import SourceDefinition
 class OmeTranscriptAdapter:
     """Read-only adapter for OME's recruiter voice transcripts."""
 
+    RELEVANCE_TERMS = (
+        "rmis", "evident", "insurance", "packet", "training", "factoring",
+        "onboard", "application", "w-9", "w9", "hitch",
+    )
+
     def __init__(self, dsn: str):
         if not dsn:
             raise ValueError("OME_ANALYTICS_DSN is required")
@@ -51,9 +56,15 @@ class OmeTranscriptAdapter:
                     "risk_level": risk_level or "unknown",
                     "overall_score": float(overall_score) if overall_score is not None else None,
                     "historical": True,
+                    "relevance": "carrier_onboarding",
                 },
             )
             for call_id, case_key, transcript, created_at, direction, duration, source_system,
             started_at, conversion_outcome, risk_level, overall_score in rows
-            if call_id and created_at
+            if call_id and created_at and self._is_relevant(transcript)
         ]
+
+    @classmethod
+    def _is_relevant(cls, transcript: str) -> bool:
+        lowered = transcript.lower()
+        return any(term in lowered for term in cls.RELEVANCE_TERMS)
