@@ -12,6 +12,9 @@ from carrier_kb.retrieval.repository import Citation, Evidence, KnowledgeReposit
 class Answer:
     text: str
     evidence: tuple[Evidence, ...]
+    answer_type: str = "policy"
+    confidence: str = "supported"
+    next_action: str | None = None
 
 
 class AnswerService:
@@ -36,9 +39,21 @@ class AnswerService:
             return Answer(
                 text="I don't have an approved source that answers that yet. Please contact your LoHi recruiter.",
                 evidence=(),
+                answer_type="handoff",
+                confidence="unsupported",
+                next_action="Contact your LoHi recruiter for a confirmed answer.",
             )
         # LLM synthesis belongs here once the retrieval/evaluation contract is approved. Returning
         # evidence first makes the safety boundary testable and keeps this scaffold non-deceptive.
+        if principal.application_id and evidence[0].document_id.startswith("carrier-hub:"):
+            action = context.next_action.description if context.next_action else None
+            return Answer(
+                text=self._context_body(context),
+                evidence=tuple(evidence),
+                answer_type="application_status",
+                confidence="live",
+                next_action=action,
+            )
         return Answer(text=evidence[0].body, evidence=tuple(evidence))
 
     @staticmethod

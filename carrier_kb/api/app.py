@@ -45,6 +45,9 @@ def create_app() -> FastAPI:
         result = await answers.answer(payload.question, caller)
         return {
             "answer": result.text,
+            "answer_type": result.answer_type,
+            "confidence": result.confidence,
+            "next_action": result.next_action,
             "citations": [
                 {"document_id": item.document_id, "sources": [citation.__dict__ for citation in item.citations]}
                 for item in result.evidence
