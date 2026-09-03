@@ -1,0 +1,59 @@
+# Staging values for the shared Lohi Helm deployment workflow.
+# Replace the image repository and add an approved Secret/ExternalSecret before
+# enabling deployment in the cluster.
+replicaCount: 1
+
+image:
+  repository: us-central1-docker.pkg.dev/lohi-project-546094/lohi-docker-repo/shaleapps/carrier-onboarding-kb
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets:
+  - name: dockersecret
+
+nameOverride: "carrier-onboarding-kb-stage"
+fullnameOverride: "carrier-onboarding-kb-stage"
+args: []
+
+env:
+  - name: PORT
+    value: "8080"
+  - name: ANSWER_SYNTHESIS_ENABLED
+    value: "false"
+
+# Inject KB_DSN, CARRIER_HUB_API_BASE_URL, and capability settings through an
+# approved staging Secret. Never put their values in this file.
+externalSecrets: []
+
+serviceAccount:
+  create: false
+  automount: true
+  name: "go-profilerksa"
+
+service:
+  - name: carrier-onboarding-kb-stage
+    port: 8080
+    targetPort: 8080
+
+ingress:
+  enabled: false
+
+resources:
+  limits:
+    cpu: "1"
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+
+autoscaling:
+  enabled: false

@@ -1,0 +1,44 @@
+name: '[STG] Build-Test-Deploy carrier-onboarding-kb'
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["dev"]
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install uv
+      - run: uv sync --group dev
+      - run: uv run ruff check carrier_kb tests
+      - run: uv run pytest
+
+  build-push:
+    needs: test
+    uses: ShaleApps/lohi-project-infra/.github/workflows/template-build.yaml@main
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+
+  deploy:
+    needs: [test, build-push]
+    uses: ShaleApps/lohi-project-infra/.github/workflows/template-deploy.yaml@main
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    with:
+      GKE_CLUSTER: 'vrt-lohi-s-gke-k8s-usc1'
+      HELM_RELEASE: 'carrier-onboarding-kb-stage'
+      HELM_RELEASE_NAMESPACE: 'lohi'
+      HELM_OVERRIDES: '--set image.tag=${{ github.sha }}'
+      HELM_VALUES_FILE: 'helm/dev_values.yaml'
+      HELM_CHART_VERSION: '1.2.0'
