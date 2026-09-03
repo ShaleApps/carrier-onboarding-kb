@@ -19,4 +19,5 @@ sources:
     visibility: carrier_internal
     owner: carrier-ops@lohi.ai
     path: /Users/alexlim/Downloads/export-messages-2d0f54a17e9e2a0f4479-2026-09-02-245d-d06fc4.csv
+    chunk_chars: 12000
     refresh: manual

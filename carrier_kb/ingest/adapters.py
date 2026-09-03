@@ -57,10 +57,28 @@ class StaticFileAdapter(SourceAdapter):
         path = Path(source.path)
         body = self._read_body(path)
         stat = path.stat()
+        chunks = self._chunks(body, source.chunk_chars)
         return [CapturedRecord(
-            native_id=str(path.resolve()), body=body, source_url=None,
-            occurred_at=datetime.fromtimestamp(stat.st_mtime, tz=UTC), metadata={"filename": path.name},
-        )]
+            native_id=f"{path.resolve()}#chunk-{index}", body=chunk, source_url=None,
+            occurred_at=datetime.fromtimestamp(stat.st_mtime, tz=UTC),
+            metadata={"filename": path.name, "chunk_index": index, "chunk_count": len(chunks)},
+        ) for index, chunk in enumerate(chunks)]
+
+    @staticmethod
+    def _chunks(body: str, chunk_chars: int) -> list[str]:
+        lines = body.splitlines()
+        chunks: list[str] = []
+        current: list[str] = []
+        size = 0
+        for line in lines:
+            if current and size + len(line) + 1 > chunk_chars:
+                chunks.append("\n".join(current))
+                current, size = [], 0
+            current.append(line)
+            size += len(line) + 1
+        if current:
+            chunks.append("\n".join(current))
+        return chunks or [""]
 
     @staticmethod
     def _read_body(path: Path) -> str:

@@ -22,6 +22,7 @@ class SourceDefinition:
     channel_ids: tuple[str, ...] = ()
     view: str | None = None
     path: str | None = None
+    chunk_chars: int = 12000
 
 
 def load_registry(path: Path) -> list[SourceDefinition]:
@@ -43,9 +44,12 @@ def load_registry(path: Path) -> list[SourceDefinition]:
             raise ValueError(f"{source_id}: LoHi source needs a named view")
         if kind == "static_file" and not source.get("path"):
             raise ValueError(f"{source_id}: static source needs a path")
+        chunk_chars = int(source.get("chunk_chars", 12000))
+        if chunk_chars < 1000 or chunk_chars > 50000:
+            raise ValueError(f"{source_id}: chunk_chars must be between 1000 and 50000")
         out.append(SourceDefinition(
             id=source_id, kind=kind, corpus=corpus, owner=source["owner"], refresh=source["refresh"],
             file_ids=tuple(source.get("file_ids", [])), channel_ids=tuple(source.get("channel_ids", [])),
-            view=source.get("view"), path=source.get("path"),
+            view=source.get("view"), path=source.get("path"), chunk_chars=chunk_chars,
         ))
     return out
