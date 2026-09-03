@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
+from pathlib import Path
 
 from carrier_kb.ingest.registry import SourceDefinition
 
@@ -40,3 +41,18 @@ class LohiViewAdapter(SourceAdapter):
         if not source.view:
             raise ValueError("LoHi source is missing its approved view")
         raise NotImplementedError("LoHi view adapter requires the read-only dossier connection")
+
+
+class StaticFileAdapter(SourceAdapter):
+    """Explicitly listed UTF-8 files for interim, reviewable corpus seeding."""
+
+    async def capture(self, source: SourceDefinition) -> list[CapturedRecord]:
+        if not source.path:
+            raise ValueError("static source is missing a path")
+        path = Path(source.path)
+        body = path.read_text(encoding="utf-8")
+        stat = path.stat()
+        return [CapturedRecord(
+            native_id=str(path.resolve()), body=body, source_url=None,
+            occurred_at=datetime.fromtimestamp(stat.st_mtime, tz=UTC), metadata={"filename": path.name},
+        )]
