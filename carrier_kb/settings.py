@@ -15,4 +15,5 @@ class Settings(BaseSettings):
     kb_capability_audience: str = "carrier-onboarding-kb"
     kb_capability_secret: str = ""
     lohi_read_dsn: str = ""
+    lohi_market_catalog_view: str = ""
     ome_analytics_dsn: str = ""
