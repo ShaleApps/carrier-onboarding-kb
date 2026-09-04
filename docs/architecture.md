@@ -9,7 +9,7 @@ Carrier Hub remains the operational system of record. This service stores only k
 | Identity, roles, applications, enrollment links | Carrier Hub |
 | Source selection, capture, distillation, retrieval, citations | Carrier Onboarding KB |
 | Drive/Slack access grants and content ownership | Source owners |
-| Live status/requirement explanation | Carrier Hub read-only, scoped tool (future) |
+| Live status/requirement explanation | Carrier Hub read-only, application-scoped status tool |
 
 `carrier_public` and `carrier_internal` are separate corpus values applied to both sources and documents. The API derives allowed corpora from an authenticated principal; callers and models cannot select one.
 
@@ -19,4 +19,13 @@ Each configured source is allowlisted and has an owner, cadence, corpus, and sou
 
 ## Retrieval
 
-The planned repository implementation performs lexical and vector retrieval within the allowed corpora, fuses ranks, and returns the evidence/citations to the answer layer. It must return no result rather than widen scope. The answer layer must cite every material claim and hand off on weak evidence.
+The current repository performs PostgreSQL full-text retrieval within the allowed
+corpora and returns evidence/citations to the answer layer. It must return no
+result rather than widen scope. Vector retrieval is intentionally deferred: the
+OME Analytics instance does not currently provide `pgvector`, and lexical
+retrieval gives a simple, auditable first production slice. The answer layer
+must cite every material claim and hand off on weak evidence.
+
+For a verified application capability, the answer layer may prepend a
+public-safe, read-only Carrier Hub status projection. This is live operational
+context, not indexed KB content, and it does not alter corpus authorization.

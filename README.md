@@ -10,7 +10,7 @@ This is **not** a general company search service and it never receives direct br
 - Source registry with explicit Google Drive files/folders, Slack channels, and LoHi read-only dossiers/views.
 - Read-only ingest adapters and a provenance-preserving Postgres schema.
 - Carrier Hub identity adapter for internal Firebase sessions and a short-lived capability-token lane for public enrollment pages.
-- Cited hybrid retrieval API. Live operational answers are intentionally deferred until a reviewed, scoped tool contract exists.
+- Cited corpus-scoped retrieval API plus a read-only, public-safe Carrier Hub application-status card when a verified capability includes an application ID.
 
 ## Run locally
 

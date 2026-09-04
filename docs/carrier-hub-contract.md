@@ -19,8 +19,24 @@ The public registration-status and driver-enrollment pages do not have Firebase 
 }
 ```
 
-The initial capability is deliberately restricted to `carrier_public`. Application-specific tools are a later, separately authorized contract.
+The capability is deliberately restricted to `carrier_public`. Its optional
+`application_id` is the only accepted application scope: the request body has
+no application-ID field and rejects one if supplied.
 
-## Future live tools
+## Implemented live status tool
 
-Implement one explicit Carrier Hub endpoint per question type, e.g. `GET /api/v1/kb-context/applications/{id}/next-step`. The KB passes the verified scope; Carrier Hub rechecks it. Do not give the KB a general database credential or a generic application API.
+For an application-scoped request, the KB calls the existing read-only endpoint:
+
+```text
+GET /api/v1/application/{verified_application_id}/status
+```
+
+It passes the capability bearer token. Carrier Hub remains responsible for
+rechecking that authority. The KB projects the response into a small status
+card (stage, status, safe requirement states, next action, and update time),
+not raw application data. Public capabilities always request Carrier Hub's
+public projection; internal callers request the internal projection.
+
+Do not give the KB a general Carrier Hub database credential or generic
+application API. Add any future live capability as a separate, typed,
+read-only contract with explicit field allowlisting.
