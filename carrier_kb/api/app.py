@@ -81,7 +81,8 @@ def create_app() -> FastAPI:
             except (psycopg.Error, OSError):
                 database_ready = False
         ready = configured and database_ready
-        return {"status": "ready" if ready else "not_ready", "database": "ok" if database_ready else "unavailable"}
+        body = {"status": "ready" if ready else "not_ready", "database": "ok" if database_ready else "unavailable"}
+        return JSONResponse(status_code=200 if ready else 503, content=body)
 
     @app.post("/v1/answer")
     async def answer(request: Request, payload: AskRequest, caller: Principal = Depends(principal)):  # noqa: B008

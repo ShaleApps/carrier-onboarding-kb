@@ -48,7 +48,7 @@ livenessProbe:
     port: 8080
 readinessProbe:
   httpGet:
-    path: /healthz
+    path: /readyz
     port: 8080
 
 autoscaling:

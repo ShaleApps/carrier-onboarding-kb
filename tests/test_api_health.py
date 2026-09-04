@@ -12,6 +12,7 @@ def test_health_and_readiness_expose_request_id(monkeypatch):
     assert response.status_code == 200
     assert response.headers["x-request-id"] == "smoke-123"
     readiness = client.get("/readyz")
+    assert readiness.status_code == 503
     assert readiness.json()["status"] == "not_ready"
     assert readiness.json()["database"] == "unavailable"
 
