@@ -66,10 +66,28 @@ After the view and grant are deployed, configure the runtime secret:
 ```text
 LOHI_READ_DSN=<read-only KB role DSN>
 LOHI_MARKET_CATALOG_VIEW=carrier_kb_public_market_catalog_v1
+LOHI_MARKET_OPPORTUNITY_VIEW=carrier_kb_public_market_opportunity_v1
 ```
 
-The client remains disabled if either variable is absent. It uses an exact
-case-insensitive market-name match; an ambiguous view result fails closed.
+Each client remains disabled until its view variable is configured. They use an
+exact case-insensitive market-name match; an ambiguous view result fails closed.
+
+## Current opportunity view
+
+The same owner/DBA process can provision:
+
+```text
+carrier_kb_public_market_opportunity_v1
+```
+
+Use `docs/market-opportunity-prototype.sql` as the definition. It exposes only
+market name, a coarse `none`/`limited`/`active` availability band, aggregate
+equipment, and `refreshed_at`. It must not expose raw load counts, individual
+loads, lanes, facilities, customer rates, or carrier-pay quotes.
+
+```sql
+GRANT SELECT ON carrier_kb_public_market_opportunity_v1 TO carrier_kb_runtime;
+```
 
 ## Earnings view remains pending
 

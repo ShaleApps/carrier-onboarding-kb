@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from carrier_kb.market.client import LohiMarketCatalogClient
+from carrier_kb.market.client import LohiMarketCatalogClient, LohiMarketOpportunityClient
 
 
 def test_market_client_is_disabled_without_explicit_view():
@@ -13,6 +13,16 @@ def test_market_client_is_disabled_without_explicit_view():
 def test_market_client_rejects_unsafe_view_name():
     with pytest.raises(ValueError, match="invalid LoHi market catalog view"):
         LohiMarketCatalogClient("postgresql://unused", "catalog; DROP TABLE sources")
+
+
+def test_opportunity_client_is_disabled_without_explicit_view():
+    client = LohiMarketOpportunityClient("postgresql://unused", "")
+    assert client.configured is False
+
+
+def test_opportunity_client_rejects_unsafe_view_name():
+    with pytest.raises(ValueError, match="invalid LoHi market opportunity view"):
+        LohiMarketOpportunityClient("postgresql://unused", "view; DROP TABLE sources")
 
 
 def test_market_projection_is_strict_and_aggregate_only():

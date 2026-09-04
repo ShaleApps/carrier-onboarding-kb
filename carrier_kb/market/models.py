@@ -36,3 +36,15 @@ class MarketContext(BaseModel):
     facilities: tuple[MarketFacility, ...] = ()
     equipment: tuple[MarketEquipment, ...] = ()
     refreshed_at: datetime
+
+
+class MarketOpportunityContext(BaseModel):
+    """Current aggregate demand signal; never a carrier-specific load quote."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    market_id: str = Field(min_length=1, max_length=100)
+    market_name: str = Field(min_length=1, max_length=200)
+    availability: str = Field(pattern="^(none|limited|active)$")
+    equipment: tuple[MarketEquipment, ...] = ()
+    refreshed_at: datetime

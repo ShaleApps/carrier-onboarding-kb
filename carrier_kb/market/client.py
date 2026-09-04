@@ -6,7 +6,7 @@ from typing import Any
 import psycopg
 from psycopg import sql
 
-from carrier_kb.market.models import MarketContext
+from carrier_kb.market.models import MarketContext, MarketOpportunityContext
 
 
 class LohiMarketCatalogClient:
@@ -66,4 +66,48 @@ class LohiMarketCatalogClient:
             facilities=tuple(row[6] or ()),
             equipment=tuple(row[7] or ()),
             refreshed_at=row[8],
+        )
+
+
+class LohiMarketOpportunityClient:
+    """Reads one approved aggregate demand view, never raw current loads or rates."""
+
+    _NAME = LohiMarketCatalogClient._NAME
+
+    def __init__(self, dsn: str, view: str):
+        self.dsn = dsn
+        self.view = view
+        if view and not self._NAME.fullmatch(view):
+            raise ValueError("invalid LoHi market opportunity view")
+
+    @property
+    def configured(self) -> bool:
+        return bool(self.dsn and self.view)
+
+    async def get_market(self, market_name: str) -> MarketOpportunityContext | None:
+        if not self.configured:
+            return None
+        normalized = " ".join(market_name.split())
+        if not normalized or len(normalized) > 200:
+            raise ValueError("invalid market name")
+        query = sql.SQL("""
+            SELECT market_id::text, market_name, availability, equipment, refreshed_at
+            FROM {view}
+            WHERE lower(market_name) = lower(%s)
+            LIMIT 2
+        """).format(view=sql.Identifier(self.view))
+        async with await psycopg.AsyncConnection.connect(self.dsn) as connection, connection.cursor() as cursor:
+            await cursor.execute("SET TRANSACTION READ ONLY")
+            await cursor.execute(query, (normalized,))
+            rows = await cursor.fetchall()
+        if len(rows) > 1:
+            raise ValueError("market opportunity view has ambiguous market names")
+        if not rows:
+            return None
+        return MarketOpportunityContext(
+            market_id=str(rows[0][0]),
+            market_name=rows[0][1],
+            availability=rows[0][2],
+            equipment=tuple(rows[0][3] or ()),
+            refreshed_at=rows[0][4],
         )
