@@ -106,6 +106,7 @@ def create_app() -> FastAPI:
             "answer_type": result.answer_type,
             "confidence": result.confidence,
             "next_action": result.next_action,
+            "application_status": result.application_status,
             "citations": [
                 {"document_id": item.document_id, "sources": [citation.__dict__ for citation in item.citations]}
                 for item in result.evidence

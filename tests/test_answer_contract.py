@@ -91,6 +91,9 @@ async def test_live_status_is_structured():
     assert result.answer_type == "application_status"
     assert result.confidence == "live"
     assert "in_progress" in result.text
+    assert result.application_status["stage"] == "verification"
+    assert result.application_status["blocking_requirements"] == []
+    assert result.application_status["completed_requirements"] == []
 
 
 @pytest.mark.asyncio

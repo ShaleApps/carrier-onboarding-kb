@@ -17,6 +17,7 @@ class Answer:
     answer_type: str = "policy"
     confidence: str = "supported"
     next_action: str | None = None
+    application_status: dict | None = None
 
 
 class AnswerService:
@@ -59,6 +60,7 @@ class AnswerService:
                 answer_type="application_status",
                 confidence="live",
                 next_action=action,
+                application_status=self._status_card(context),
             )
         text = evidence[0].body
         lowered = text.lower()
@@ -101,3 +103,18 @@ class AnswerService:
             f"{context.status_explanation or ''} "
             f"Requirements: {requirements or 'none reported'}."
         ).strip()
+
+    @staticmethod
+    def _status_card(context) -> dict:
+        requirements = [item.model_dump(mode="json") for item in context.requirements]
+        blocking = [item for item in requirements if item["blocking"] and item["state"] != "satisfied"]
+        completed = [item for item in requirements if item["state"] in {"satisfied", "not_applicable"}]
+        return {
+            "stage": context.stage,
+            "status": context.status,
+            "explanation": context.status_explanation,
+            "blocking_requirements": blocking,
+            "completed_requirements": completed,
+            "next_action": context.next_action.model_dump(mode="json") if context.next_action else None,
+            "updated_at": context.context_updated_at.isoformat(),
+        }
