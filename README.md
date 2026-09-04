@@ -36,6 +36,19 @@ these credentials for a shared or production deployment.
 
 `config/sources.example.yaml` is a checked-in example only. Copy it to an untracked file and replace the placeholder IDs after a source-owner and visibility review.
 
+### Production bootstrap
+
+The container includes `config/sources.production.yaml`, which contains only
+the two reviewed static evidence packs. After the OME runtime role is provisioned,
+seed a new environment once with:
+
+```bash
+carrier-kb-ingest --registry /app/config/sources.production.yaml
+```
+
+External Drive, Slack, Front, and OME sources must be added only after their
+allowlist, credentials, and evaluation coverage are approved.
+
 ## Core rules
 
 1. A carrier-facing request searches only `carrier_public`; internal requests may search both corpora.

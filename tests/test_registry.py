@@ -13,6 +13,14 @@ def test_example_registry_loads():
     ]
 
 
+def test_production_registry_contains_only_reviewed_static_sources():
+    registry = load_registry(Path("config/sources.production.yaml"))
+    assert [(item.id, item.kind, item.corpus.value) for item in registry] == [
+        ("canonical-evidence-public", "static_file", "carrier_public"),
+        ("canonical-evidence-internal", "static_file", "carrier_internal"),
+    ]
+
+
 def test_registry_rejects_unbounded_slack_source(tmp_path):
     path = tmp_path / "sources.yaml"
     path.write_text("sources:\n  - id: bad\n    kind: slack\n    visibility: carrier_internal\n    owner: a@b.com\n    refresh: '* * * * *'\n")

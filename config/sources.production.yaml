@@ -1,0 +1,19 @@
+# Production-safe bootstrap corpus. These files are reviewed and baked into the
+# image; external sources are deliberately absent until their exact allowlists
+# and service credentials are approved.
+sources:
+  - id: canonical-evidence-public
+    kind: static_file
+    visibility: carrier_public
+    owner: carrier-onboarding@lohi.ai
+    path: /app/docs/canonical-evidence-public.md
+    chunk_chars: 1200
+    refresh: manual
+
+  - id: canonical-evidence-internal
+    kind: static_file
+    visibility: carrier_internal
+    owner: carrier-onboarding@lohi.ai
+    path: /app/docs/canonical-evidence-pack.md
+    chunk_chars: 1200
+    refresh: manual

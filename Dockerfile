@@ -6,6 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 COPY pyproject.toml uv.lock README.md ./
 COPY carrier_kb ./carrier_kb
+COPY docs ./docs
+COPY config/sources.production.yaml ./config/sources.production.yaml
 
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir .
