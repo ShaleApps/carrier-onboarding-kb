@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from carrier_kb.auth.carrier_hub import CarrierHubAuthorizer
 from carrier_kb.carrier_hub.client import HttpCarrierHubContextClient
 from carrier_kb.domain import Principal
+from carrier_kb.market.client import LohiMarketCatalogClient, LohiMarketOpportunityClient
 from carrier_kb.retrieval.repository import KnowledgeRepository, PostgresKnowledgeRepository
 from carrier_kb.retrieval.service import AnswerService
 from carrier_kb.settings import Settings
@@ -25,6 +26,7 @@ class AskRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     question: str = Field(min_length=3, max_length=4000)
     conversation_id: str | None = Field(default=None, max_length=200)
+    market_name: str | None = Field(default=None, min_length=2, max_length=200)
 
 
 class UnconfiguredRepository(KnowledgeRepository):
@@ -39,6 +41,10 @@ def create_app() -> FastAPI:
     answers = AnswerService(
         repository,
         carrier_hub=HttpCarrierHubContextClient(settings.carrier_hub_api_base_url),
+        market_catalog=LohiMarketCatalogClient(settings.lohi_read_dsn, settings.lohi_market_catalog_view),
+        market_opportunity=LohiMarketOpportunityClient(
+            settings.lohi_read_dsn, settings.lohi_market_opportunity_view
+        ),
         openai_api_key=settings.openai_api_key,
         answer_model=settings.answer_model,
         synthesis_enabled=settings.answer_synthesis_enabled,
@@ -87,7 +93,7 @@ def create_app() -> FastAPI:
     @app.post("/v1/answer")
     async def answer(request: Request, payload: AskRequest, caller: Principal = Depends(principal)):  # noqa: B008
         try:
-            result = await answers.answer(payload.question, caller)
+            result = await answers.answer(payload.question, caller, market_name=payload.market_name)
         except (psycopg.Error, httpx.HTTPError, TimeoutError):
             logger.exception("answer_dependency_failure", extra={"request_id": request.state.request_id})
             return JSONResponse(

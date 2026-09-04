@@ -40,3 +40,13 @@ public projection; internal callers request the internal projection.
 Do not give the KB a general Carrier Hub database credential or generic
 application API. Add any future live capability as a separate, typed,
 read-only contract with explicit field allowlisting.
+
+## Answer request context
+
+`POST /v1/answer` accepts a `question` and an optional `market_name`. Carrier
+Hub may supply `market_name` only from a user-selected or otherwise verified
+market context; it helps the KB select an approved aggregate market tool. It
+does not grant application, carrier, or rate authority.
+
+`application_id`, audience, and brokerage scope are never accepted from the
+request body. They come exclusively from Carrier Hub authentication.

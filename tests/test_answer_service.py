@@ -40,7 +40,7 @@ async def test_live_context_is_first_class_evidence():
     )
     assert result.evidence[0].document_id == "carrier-hub:app-1"
     assert result.evidence[0].citations[0].source_id == "carrier_hub"
-    assert result.evidence[1].document_id == "policy-1"
+    assert len(result.evidence) == 1
 
 
 @pytest.mark.asyncio
@@ -48,6 +48,25 @@ async def test_without_application_id_only_policy_evidence_is_used():
     service = AnswerService(Repository(), CarrierHub())
     result = await service.answer("What is the policy?", Principal("user-1", Audience.INTERNAL))
     assert [item.document_id for item in result.evidence] == ["policy-1"]
+
+
+@pytest.mark.asyncio
+async def test_non_status_question_does_not_fetch_application_context():
+    class CapturingCarrierHub(CarrierHub):
+        def __init__(self):
+            self.calls = 0
+
+        async def get_application_context(self, *args, **kwargs):
+            self.calls += 1
+            return await super().get_application_context(*args, **kwargs)
+
+    carrier_hub = CapturingCarrierHub()
+    result = await AnswerService(Repository(), carrier_hub).answer(
+        "How do I complete RMIS?",
+        Principal("user-1", Audience.INTERNAL, application_id="app-1", access_token="token"),
+    )
+    assert carrier_hub.calls == 0
+    assert result.answer_type == "policy"
 
 
 @pytest.mark.asyncio

@@ -2,9 +2,14 @@ from datetime import UTC, datetime
 
 import pytest
 
-from carrier_kb.carrier_hub.models import ApplicationContext
-from carrier_kb.carrier_hub.models import ContextAudience
+from carrier_kb.carrier_hub.models import ApplicationContext, ContextAudience
 from carrier_kb.domain import Audience, Corpus, Principal
+from carrier_kb.market.models import (
+    MarketContext,
+    MarketEquipment,
+    MarketFacility,
+    MarketOpportunityContext,
+)
 from carrier_kb.retrieval.repository import Citation, Evidence, KnowledgeRepository
 from carrier_kb.retrieval.service import AnswerService
 
@@ -45,6 +50,30 @@ class LiveCarrierHub:
             status="in_progress",
             requirements=(),
             context_updated_at=datetime.now(UTC),
+        )
+
+
+class LiveMarketCatalog:
+    configured = True
+
+    async def get_market(self, market_name):
+        return MarketContext(
+            market_id="market-1", market_name=market_name, timezone="America/Denver",
+            recent_load_count=20, completed_load_count_90d=100,
+            facilities=(MarketFacility(facility_id="facility-1", name="Example Facility", city="Denver", state="CO", completed_load_count_90d=30),),
+            equipment=(MarketEquipment(trailer_type="dry_van", recent_load_count=20),),
+            refreshed_at=datetime.now(UTC),
+        )
+
+
+class LiveMarketOpportunity:
+    configured = True
+
+    async def get_market(self, market_name):
+        return MarketOpportunityContext(
+            market_id="market-1", market_name=market_name, availability="active",
+            equipment=(MarketEquipment(trailer_type="dry_van", recent_load_count=20),),
+            refreshed_at=datetime.now(UTC),
         )
 
 
@@ -151,6 +180,38 @@ async def test_carrier_live_context_uses_public_projection():
 
     assert carrier_hub.audiences == [ContextAudience.PUBLIC]
     assert result.answer_type == "application_status"
+
+
+@pytest.mark.asyncio
+async def test_market_catalog_question_uses_live_aggregate_context():
+    service = AnswerService(EmptyRepository(), market_catalog=LiveMarketCatalog())
+    result = await service.answer(
+        "Which facilities and equipment are in this market?", Principal("carrier", Audience.CARRIER),
+        market_name="Denver",
+    )
+    assert result.answer_type == "market_catalog"
+    assert result.confidence == "live"
+    assert result.evidence[0].citations[0].source_id == "lohi_market_catalog"
+    assert "Example Facility" in result.text
+
+
+@pytest.mark.asyncio
+async def test_market_availability_question_uses_live_opportunity_context():
+    service = AnswerService(EmptyRepository(), market_opportunity=LiveMarketOpportunity())
+    result = await service.answer(
+        "Is this market currently active?", Principal("carrier", Audience.CARRIER), market_name="Denver"
+    )
+    assert result.answer_type == "market_opportunity"
+    assert "active" in result.text
+
+
+@pytest.mark.asyncio
+async def test_earnings_question_hands_off_until_metric_is_approved():
+    result = await AnswerService(EmptyRepository()).answer(
+        "What are typical driver earnings?", Principal("carrier", Audience.CARRIER), market_name="Denver"
+    )
+    assert result.answer_type == "handoff"
+    assert result.confidence == "unsupported"
 
 
 @pytest.mark.asyncio
