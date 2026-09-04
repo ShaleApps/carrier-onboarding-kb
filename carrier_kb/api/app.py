@@ -8,7 +8,7 @@ import httpx
 import psycopg
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from carrier_kb.auth.carrier_hub import CarrierHubAuthorizer
 from carrier_kb.carrier_hub.client import HttpCarrierHubContextClient
@@ -21,6 +21,8 @@ logger = logging.getLogger("carrier_kb.api")
 
 
 class AskRequest(BaseModel):
+    # Application authority comes only from the signed capability token, never the body.
+    model_config = ConfigDict(extra="forbid")
     question: str = Field(min_length=3, max_length=4000)
     conversation_id: str | None = Field(default=None, max_length=200)
 
