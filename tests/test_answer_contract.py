@@ -3,7 +3,8 @@ from datetime import UTC, datetime
 import pytest
 
 from carrier_kb.carrier_hub.models import ApplicationContext
-from carrier_kb.domain import Audience, Principal
+from carrier_kb.carrier_hub.models import ContextAudience
+from carrier_kb.domain import Audience, Corpus, Principal
 from carrier_kb.retrieval.repository import Citation, Evidence, KnowledgeRepository
 from carrier_kb.retrieval.service import AnswerService
 
@@ -19,6 +20,19 @@ class FixedRepository(KnowledgeRepository):
 class EmptyRepository(KnowledgeRepository):
     async def search(self, question, corpora, limit=8):
         return []
+
+
+class CorpusAwareRepository(KnowledgeRepository):
+    """Test double that records the authorization scope supplied to retrieval."""
+
+    def __init__(self):
+        self.calls = []
+        self.public = Evidence("public-policy", "Approved public policy", (Citation("public", "Public", None),))
+        self.internal = Evidence("internal-policy", "Internal-only instruction", (Citation("internal", "Internal", None),))
+
+    async def search(self, question, corpora, limit=8):
+        self.calls.append(corpora)
+        return [self.public] + ([self.internal] if Corpus.INTERNAL in corpora else [])
 
 
 class LiveCarrierHub:
@@ -94,6 +108,49 @@ async def test_live_status_is_structured():
     assert result.application_status["stage"] == "verification"
     assert result.application_status["blocking_requirements"] == []
     assert result.application_status["completed_requirements"] == []
+
+
+@pytest.mark.asyncio
+async def test_carrier_retrieval_is_restricted_to_public_corpus():
+    repository = CorpusAwareRepository()
+    result = await AnswerService(repository).answer(
+        "What documents do I need?", Principal("carrier", Audience.CARRIER)
+    )
+
+    assert repository.calls == [(Corpus.PUBLIC,)]
+    assert [item.document_id for item in result.evidence] == ["public-policy"]
+    assert "Internal-only" not in result.text
+
+
+@pytest.mark.asyncio
+async def test_internal_retrieval_can_search_both_approved_corpora():
+    repository = CorpusAwareRepository()
+    result = await AnswerService(repository).answer(
+        "What documents do I need?", Principal("teammate", Audience.INTERNAL)
+    )
+
+    assert repository.calls == [(Corpus.PUBLIC, Corpus.INTERNAL)]
+    assert [item.document_id for item in result.evidence] == ["public-policy", "internal-policy"]
+
+
+@pytest.mark.asyncio
+async def test_carrier_live_context_uses_public_projection():
+    class CapturingCarrierHub(LiveCarrierHub):
+        def __init__(self):
+            self.audiences = []
+
+        async def get_application_context(self, application_id, bearer_token, audience):
+            self.audiences.append(audience)
+            return await super().get_application_context(application_id, bearer_token, audience)
+
+    carrier_hub = CapturingCarrierHub()
+    result = await AnswerService(EmptyRepository(), carrier_hub).answer(
+        "What is my status?",
+        Principal("carrier", Audience.CARRIER, application_id="app-1", access_token="cap"),
+    )
+
+    assert carrier_hub.audiences == [ContextAudience.PUBLIC]
+    assert result.answer_type == "application_status"
 
 
 @pytest.mark.asyncio
